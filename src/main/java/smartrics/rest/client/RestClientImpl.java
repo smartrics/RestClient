@@ -227,12 +227,16 @@ public class RestClientImpl implements RestClient {
             throw new IllegalStateException("hostAddress is null: please config httpClient host configuration or " + "pass a valid host address or config a baseUrl on this client");
         String uriString = host + request.getResource();
         try {
-            m.setURI(new URI(uriString, false));
+            m.setURI(createUri(uriString, false));
         } catch (URIException e) {
             throw new IllegalStateException("Problem when building URI: " + uriString, e);
         } catch (NullPointerException e) {
             throw new IllegalStateException("Building URI with null string", e);
         }
+    }
+
+    protected URI createUri(String uriString, boolean escaped) throws URIException {
+        return new URI(uriString, escaped);
     }
 
     /**
