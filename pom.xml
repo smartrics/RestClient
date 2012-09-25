@@ -15,10 +15,34 @@
 	<licenses>
 		<license>
 			<name>GNU LESSER GENERAL PUBLIC LICENSE</name>
-			<url>http://www.gnu.org/licenses/</url>
+			<url>http://www.gnu.org/licenses/lgpl.html</url>
 			<comments>See COPYING, COPYING.LESSER, COPYRIGHT</comments>
 		</license>
 	</licenses>
+	<developers>
+		<developer>
+			<name>Fabrizio Cannizzo</name>
+			<url>https://github.com/smartrics</url>
+			<id>smartrics</id>
+		</developer>
+	</developers>
+	<scm>
+		<connection>scm:git:https://github.com/smartrics/RestClient.git</connection>
+		<developerConnection>scm:git:[fetch=]https://github.com/smartrics/RestClient.git[push=]git@github.com:smartrics/RestClient.git</developerConnection>
+		<url>scm:git:https://github.com/smartrics/RestClient.git</url>
+	</scm>
+	<organization>
+		<name>smartrics</name>
+		<url>http://smartrics.blogspot.com</url>
+	</organization>
+	<ciManagement>
+		<system>Hudson</system>
+		<url>http://jenkins.fazend.com:8080/job/RestClient</url>
+	</ciManagement>
+	<issueManagement>
+		<system>GitHub Issues</system>
+		<url>https://github.com/smartrics/RestClient/issues</url>
+	</issueManagement>
 	<dependencies>
 		<dependency>
 			<groupId>commons-httpclient</groupId>
@@ -122,21 +146,4 @@
 			</plugin>
 		</plugins>
 	</reporting>
-
-	<scm>
-		<developerConnection>smartrics</developerConnection>
-		<url>git@github.com:smartrics/RestClient.git</url>
-	</scm>
-	<organization>
-		<name>smartrics</name>
-		<url>http://smartrics.blogspot.com</url>
-	</organization>
-	<ciManagement>
-		<system>Hudson</system>
-		<url>http://jenkins.fazend.com:8080/job/RestClient</url>
-	</ciManagement>
-	<issueManagement>
-		<system>GitHub</system>
-		<url>https://github.com/smartrics/RestClient/issues</url>
-	</issueManagement>
 </project>
