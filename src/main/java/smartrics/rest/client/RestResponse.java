@@ -51,7 +51,7 @@ public class RestResponse extends RestData{
 	}
 
 	/**
-	 * @param sCode the status text for this response
+	 * @param st the status text for this response
 	 * @return this response
 	 */
 	public RestResponse setStatusText(String st) {

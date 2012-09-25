@@ -35,12 +35,12 @@ public interface RestClient {
 	 * {@code /resourcetype}, the base Url is {@code http://host:8888/domain}.
 	 * It is meant to serve as a default value to be appended to compose the
 	 * full Url when
-	 * {@link smartrics.rest.client.RestClient.execute(smartrics.rest.client.RestRequest)}
+	 * {@link smartrics.rest.client.RestClient#execute(RestRequest)}
 	 * is used.
 	 *
 	 * @param bUrl
 	 *            a string with the base Url.
-	 * @see smartrics.rest.client.RestClient#execute(smartrics.rest.client.RestRequest)
+	 * See {@link smartrics.rest.client.RestClient.#execute(RestRequest)}
 	 */
 	void setBaseUrl(String bUrl);
 
@@ -48,7 +48,7 @@ public interface RestClient {
 	 * Retrieves the previously set base Url.
 	 *
 	 * @return the base Url
-	 * @see smartrics.rest.client.RestClient#setBaseUrl(java.lang.String)
+	 * See {@link smartrics.rest.client.RestClient#setBaseUrl(String)}
 	 */
 	String getBaseUrl();
 
@@ -71,7 +71,7 @@ public interface RestClient {
 	 * @param request
 	 *            the request to be executed
 	 * @return the response of the rest request.
-	 * @see smartrics.rest.client.RestClient#setBaseUrl(java.lang.String)
+	 * See {@link smartrics.rest.client.RestClient#setBaseUrl(java.lang.String)}
 	 */
 	RestResponse execute(String baseUrl, RestRequest request);
 

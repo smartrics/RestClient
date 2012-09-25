@@ -54,7 +54,7 @@ public class RestClientImpl implements RestClient {
      * 
      * @param client
      *            the client
-     * @see org.apache.commons.httpclient.HttpClient
+     * See {@link org.apache.commons.httpclient.HttpClient}
      */
     public RestClientImpl(HttpClient client) {
         if (client == null)
@@ -63,14 +63,14 @@ public class RestClientImpl implements RestClient {
     }
 
     /**
-     * @see {@link smartrics.rest.client.RestClient#setBaseUrl(java.lang.String)}
+     * See {@link smartrics.rest.client.RestClient#setBaseUrl(java.lang.String)}
      */
     public void setBaseUrl(String bUrl) {
         this.baseUrl = bUrl;
     }
 
     /**
-     * @see {@link smartrics.rest.client.RestClient#getBaseUrl()}
+     * See {@link smartrics.rest.client.RestClient#getBaseUrl()}
      */
     public String getBaseUrl() {
         return baseUrl;
@@ -80,24 +80,22 @@ public class RestClientImpl implements RestClient {
      * Returns the Http client instance used by this implementation.
      * 
      * @return the instance of HttpClient
-     * @see org.apache.commons.httpclient.HttpClient
-     * @see {@link
-     *      smartrics.rest.client.RestClientImpl(org.apache.commons.httpclient.
-     *      HttpClient)}
+     * See {@link org.apache.commons.httpclient.HttpClient}
+     * See {@link smartrics.rest.client.RestClientImpl#RestClientImpl(HttpClient)}
      */
     public HttpClient getClient() {
         return client;
     }
 
     /**
-     * @see {@link smartrics.rest.client.RestClient#execute(smartrics.rest.client.RestRequest)}
+     * See {@link smartrics.rest.client.RestClient#execute(smartrics.rest.client.RestRequest)}
      */
     public RestResponse execute(RestRequest request) {
         return execute(getBaseUrl(), request);
     }
 
     /**
-     * @see {@link smartrics.rest.client.RestClient#execute(java.lang.String, smartrics.rest.client.RestRequest)}
+     * See {@link smartrics.rest.client.RestClient#execute(java.lang.String, smartrics.rest.client.RestRequest)}
      */
     public RestResponse execute(String hostAddr, final RestRequest request) {
         if (request == null || !request.isValid())
