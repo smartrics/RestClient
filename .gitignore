@@ -1,4 +1,6 @@
 bin
-build
-dist
-*.log
+target
+.settings
+.classpath
+.project
+
