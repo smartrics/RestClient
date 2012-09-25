@@ -17,6 +17,7 @@
 			<name>GNU LESSER GENERAL PUBLIC LICENSE</name>
 			<url>http://www.gnu.org/licenses/lgpl.html</url>
 			<comments>See COPYING, COPYING.LESSER, COPYRIGHT</comments>
+			<distribution>repo</distribution>
 		</license>
 	</licenses>
 	<developers>
@@ -110,6 +111,20 @@
 						<id>attach-javadocs</id>
 						<goals>
 							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<!--  mvn clean deploy -Dgpg.passphrase=yourpassphrase -->
+				<artifactId>maven-gpg-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>sign-artifacts</id>
+						<phase>verify</phase>
+						<goals>
+							<goal>sign</goal>
 						</goals>
 					</execution>
 				</executions>
