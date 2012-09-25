@@ -40,7 +40,7 @@ public interface RestClient {
 	 *
 	 * @param bUrl
 	 *            a string with the base Url.
-	 * See {@link smartrics.rest.client.RestClient.#execute(RestRequest)}
+	 * See {@link smartrics.rest.client.RestClient#execute(RestRequest)}
 	 */
 	void setBaseUrl(String bUrl);
 
