@@ -3,13 +3,16 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
 	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
 
+	<!-- required to link to sonatype: 
+		see https://docs.sonatype.org/display/Repository/Sonatype+OSS+Maven+Repository+Usage+Guide#SonatypeOSSMavenRepositoryUsageGuide-4.MavenRepositories 
+		-->
+	<!--  -->
 	<parent>
-		<!-- required to link to sonatype: see https://docs.sonatype.org/display/Repository/Sonatype+OSS+Maven+Repository+Usage+Guide#SonatypeOSSMavenRepositoryUsageGuide-4.MavenRepositories -->
 		<groupId>org.sonatype.oss</groupId>
 		<artifactId>oss-parent</artifactId>
 		<version>7</version>
 	</parent>
-
+	<!--  -->
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>smartrics.restfixture</groupId>
 	<artifactId>smartrics-RestClient</artifactId>
@@ -128,6 +131,7 @@
 				<groupId>org.apache.maven.plugins</groupId>
 				<!-- mvn clean deploy -Dgpg.passphrase=yourpassphrase -->
 				<artifactId>maven-gpg-plugin</artifactId>
+				<version>1.4</version>
 				<executions>
 					<execution>
 						<id>sign-artifacts</id>
