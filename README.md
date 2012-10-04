@@ -2,7 +2,7 @@ A Simple Java client for REST
 =============================
 
 The Rest Client offers a simplified interface to an underlying implementation of an HTTP client, 
-specifically geared to operate of REST resources.
+specifically geared to operate REST resources.
 
 Maven dependency
 ----------------
