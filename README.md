@@ -6,13 +6,11 @@ specifically geared to operate of REST resources.
 
 Maven dependency
 ----------------
-<pre>
-<dependency>
-  <groupId>smartrics.restfixture</groupId>
-  <artifactId>smartrics-RestClient</artifactId>
-  <version>2.0</version>
-</dependency>
-</pre>
+	<dependency>
+		<groupId>smartrics.restfixture</groupId>
+		<artifactId>smartrics-RestClient</artifactId>
+		<version>2.0</version>
+	</dependency>
 
 Getting started
 ---------------
@@ -26,4 +24,5 @@ The current implementation of '''RestClient''' wraps Apache HttpClient 3.1.
 	RestResponse response = client.execute(request);
 	String body = response.getBody();
 	Header h = response.getHeader("Content-Type");
+	// ...
 	
