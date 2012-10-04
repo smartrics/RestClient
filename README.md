@@ -12,6 +12,15 @@ Maven dependency
 		<version>2.0</version>
 	</dependency>
 
+Links
+-----
+
+*Release*: https://oss.sonatype.org/content/repositories/releases/smartrics/restfixture/smartrics-RestClient/
+
+*Continuous Integration*: http://jenkins.fazend.com:8080/job/RestClient
+
+*Maven Site*: http://jenkins.fazend.com:8080/job/RestClient/site/index.html
+
 Getting started
 ---------------
 
