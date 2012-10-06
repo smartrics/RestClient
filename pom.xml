@@ -132,6 +132,10 @@
 				<!-- mvn clean deploy -Dgpg.passphrase=yourpassphrase -->
 				<artifactId>maven-gpg-plugin</artifactId>
 				<version>1.4</version>
+				<configuration>
+					<!-- comment this to skip sign during install -->
+					<skip>true</skip>
+				</configuration>
 				<executions>
 					<execution>
 						<id>sign-artifacts</id>
