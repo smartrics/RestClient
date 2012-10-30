@@ -119,7 +119,7 @@ public class RestClientImpl implements RestClient {
             resp.setStatusText(m.getStatusText());
             resp.setBody(m.getResponseBodyAsString());
             if (m instanceof PostMethod) {
-                resp.setResponseCharsetForPDF(((PostMethod) m).getResponseCharSet());
+                resp.setResponseCharset(((PostMethod) m).getResponseCharSet());
             }
         } catch (HttpException e) {
             String message = "Http call failed for protocol failure";

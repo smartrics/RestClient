@@ -27,7 +27,7 @@ public class RestResponse extends RestData{
 	private String statusText;
 	private Integer statusCode;
 	
-	private String responseCharSetForPDF = "ISO-8859-1";
+	private String responseCharset = "ISO-8859-1";
 
 	/**
 	 * @return the status code of this response
@@ -73,12 +73,12 @@ public class RestResponse extends RestData{
 		return builder.toString();
 	}
 	
-    public void setResponseCharsetForPDF(String responseCharSetForPDF) {
-        this.responseCharSetForPDF = responseCharSetForPDF;
+    public void setResponseCharset(String responseCharset) {
+        this.responseCharset = responseCharset;
     }
 
-    public String getResponseCharSetForPDF() {
-        return responseCharSetForPDF;
+    public String getResponseCharset() {
+        return responseCharset;
     }
 
 }
