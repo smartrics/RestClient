@@ -26,6 +26,8 @@ package smartrics.rest.client;
 public class RestResponse extends RestData{
 	private String statusText;
 	private Integer statusCode;
+	
+	private String responseCharSetForPDF = "ISO-8859-1";
 
 	/**
 	 * @return the status code of this response
@@ -70,5 +72,13 @@ public class RestResponse extends RestData{
 		builder.append(super.toString());
 		return builder.toString();
 	}
+	
+    public void setResponseCharsetForPDF(String responseCharSetForPDF) {
+        this.responseCharSetForPDF = responseCharSetForPDF;
+    }
+
+    public String getResponseCharSetForPDF() {
+        return responseCharSetForPDF;
+    }
 
 }
