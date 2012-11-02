@@ -1,3 +1,7 @@
 bin
-build
-dist
+target
+.m2
+.settings
+.classpath
+.project
+
