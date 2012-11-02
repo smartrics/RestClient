@@ -27,27 +27,22 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.List;
 
-import org.apache.commons.httpclient.Header;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.HttpException;
-import org.apache.commons.httpclient.HttpMethod;
-import org.apache.commons.httpclient.URI;
-import org.apache.commons.httpclient.URIException;
+import org.apache.commons.httpclient.*;
 import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
 import org.apache.commons.httpclient.methods.FileRequestEntity;
 import org.apache.commons.httpclient.methods.RequestEntity;
 import org.apache.commons.httpclient.methods.multipart.FilePart;
 import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
 import org.apache.commons.httpclient.methods.multipart.Part;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A generic REST client based on {@code HttpClient}.
  */
 public class RestClientImpl implements RestClient {
 
-    private static Log LOG = LogFactory.getLog(RestClientImpl.class);
+    private static Logger LOG = LoggerFactory.getLogger(RestClientImpl.class);
 
     private final HttpClient client;
 
@@ -59,7 +54,7 @@ public class RestClientImpl implements RestClient {
      * 
      * @param client
      *            the client
-     * @see org.apache.commons.httpclient.HttpClient
+     * See {@link org.apache.commons.httpclient.HttpClient}
      */
     public RestClientImpl(HttpClient client) {
         if (client == null)
@@ -68,14 +63,14 @@ public class RestClientImpl implements RestClient {
     }
 
     /**
-     * @see {@link smartrics.rest.client.RestClient#setBaseUrl(java.lang.String)}
+     * See {@link smartrics.rest.client.RestClient#setBaseUrl(java.lang.String)}
      */
     public void setBaseUrl(String bUrl) {
         this.baseUrl = bUrl;
     }
 
     /**
-     * @see {@link smartrics.rest.client.RestClient#getBaseUrl()}
+     * See {@link smartrics.rest.client.RestClient#getBaseUrl()}
      */
     public String getBaseUrl() {
         return baseUrl;
@@ -85,31 +80,29 @@ public class RestClientImpl implements RestClient {
      * Returns the Http client instance used by this implementation.
      * 
      * @return the instance of HttpClient
-     * @see org.apache.commons.httpclient.HttpClient
-     * @see {@link
-     *      smartrics.rest.client.RestClientImpl(org.apache.commons.httpclient.
-     *      HttpClient)}
+     * See {@link org.apache.commons.httpclient.HttpClient}
+     * See {@link smartrics.rest.client.RestClientImpl#RestClientImpl(HttpClient)}
      */
     public HttpClient getClient() {
         return client;
     }
 
     /**
-     * @see {@link smartrics.rest.client.RestClient#execute(smartrics.rest.client.RestRequest)}
+     * See {@link smartrics.rest.client.RestClient#execute(smartrics.rest.client.RestRequest)}
      */
     public RestResponse execute(RestRequest request) {
         return execute(getBaseUrl(), request);
     }
 
     /**
-     * @see {@link smartrics.rest.client.RestClient#execute(java.lang.String, smartrics.rest.client.RestRequest)}
+     * See {@link smartrics.rest.client.RestClient#execute(java.lang.String, smartrics.rest.client.RestRequest)}
      */
     public RestResponse execute(String hostAddr, final RestRequest request) {
         if (request == null || !request.isValid())
             throw new IllegalArgumentException("Invalid request " + request);
         if (request.getTransactionId() == null)
             request.setTransactionId(Long.valueOf(System.currentTimeMillis()));
-        LOG.debug(request);
+        LOG.debug("request: {}", request);
         HttpMethod m = createHttpClientMethod(request);
         configureHttpMethod(m, hostAddr, request);
         RestResponse resp = new RestResponse();
@@ -123,18 +116,17 @@ public class RestClientImpl implements RestClient {
             resp.setStatusCode(m.getStatusCode());
             resp.setStatusText(m.getStatusText());
             resp.setBody(m.getResponseBodyAsString());
+            resp.setRawBody(m.getResponseBody());
         } catch (HttpException e) {
             String message = "Http call failed for protocol failure";
-            LOG.warn(message);
             throw new IllegalStateException(message, e);
         } catch (IOException e) {
             String message = "Http call failed for IO failure";
-            LOG.warn(message);
             throw new IllegalStateException(message, e);
         } finally {
             m.releaseConnection();
         }
-        LOG.debug(resp);
+        LOG.debug("response: {}", resp);
         return resp;
     }
 
@@ -197,8 +189,7 @@ public class RestClientImpl implements RestClient {
         try {
             requestEntity = new MultipartRequestEntity(new Part[] { new FilePart(request.getMultipartFileParameterName(), file) }, ((EntityEnclosingMethod) m).getParams());
         } catch (FileNotFoundException e) {
-            LOG.error(String.format("File %s not found", fileName), e);
-            throw new IllegalArgumentException(e);
+            throw new IllegalArgumentException("File not found: " + fileName, e);
         }
         return requestEntity;
     }
@@ -206,9 +197,7 @@ public class RestClientImpl implements RestClient {
     private RequestEntity configureFileUpload(String fileName) {
         final File file = new File(fileName);
         if (!file.exists()) {
-            String message = String.format("File %s not found", fileName);
-            LOG.error(message);
-            throw new IllegalArgumentException(message);
+            throw new IllegalArgumentException("File not found: " + fileName);
         }
         return new FileRequestEntity(file, "application/octet-stream");
     }
