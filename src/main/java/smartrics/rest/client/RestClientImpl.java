@@ -214,8 +214,9 @@ public class RestClientImpl implements RestClient {
         if (host == null)
             throw new IllegalStateException("hostAddress is null: please config httpClient host configuration or " + "pass a valid host address or config a baseUrl on this client");
         String uriString = host + request.getResource();
+        boolean escaped = request.isResourceUriEscaped();
         try {
-            m.setURI(createUri(uriString, false));
+            m.setURI(createUri(uriString, escaped));
         } catch (URIException e) {
             throw new IllegalStateException("Problem when building URI: " + uriString, e);
         } catch (NullPointerException e) {

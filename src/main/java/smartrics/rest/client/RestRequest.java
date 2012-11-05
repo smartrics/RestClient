@@ -37,6 +37,7 @@ public class RestRequest extends RestData {
     private String multipartFileParameterName = FILE;
     private String query;
     private Method method;
+    private boolean resourceUriEscaped = false;
 
     /**
      * @return the method for this request
@@ -146,6 +147,20 @@ public class RestRequest extends RestData {
         return getMethod() != null && getResource() != null;
     }
 
+	/**
+	 * @return whether resource uri is % escaped (true) or not (false). Defaults to false.
+	 */
+	public boolean isResourceUriEscaped() {
+		return resourceUriEscaped;
+	}
+
+	/**
+	 * @param escaped whether resource uri is % escaped or not
+	 */
+	public void setResourceUriEscaped(boolean escaped) {
+		this.resourceUriEscaped = escaped;
+	}
+    
     /**
      * String representation of this request.
      * 
