@@ -35,38 +35,49 @@ import org.junit.Test;
 
 public class RestClientTest {
 
-    private MockHttpMethod mockHttpMethod;
+    private MockHttpMethod       mockHttpMethod;
 
-    private final RestClientImpl mockRestClientAlwaysOK = new RestClientImpl(new MockHttpClient(200)) {
+    private final RestClientImpl mockRestClientAlwaysOK                      = new RestClientImpl(new MockHttpClient(
+                                                                                     200)) {
 
-        @Override
-        protected HttpMethod createHttpClientMethod(RestRequest request) {
-            MockHttpMethod m = new MockHttpMethod(request.getMethod().name());
-            m.setStatusCode(200);
-            mockHttpMethod = m;
-            return m;
-        }
-    };
+                                                                                 @Override
+                                                                                 protected HttpMethod createHttpClientMethod(
+                                                                                         final RestRequest request) {
+                                                                                     final MockHttpMethod m = new MockHttpMethod(
+                                                                                             request.getMethod().name());
+                                                                                     m.setStatusCode(200);
+                                                                                     mockHttpMethod = m;
+                                                                                     return m;
+                                                                                 }
+                                                                             };
 
-    private final RestClientImpl mockRestClientAlwaysThrowsIOException = new RestClientImpl(new MockHttpClient(new IOException())) {
+    private final RestClientImpl mockRestClientAlwaysThrowsIOException       = new RestClientImpl(new MockHttpClient(
+                                                                                     new IOException())) {
 
-        @Override
-        protected HttpMethod createHttpClientMethod(RestRequest request) {
-            mockHttpMethod = new MockHttpMethod(request.getMethod().name());
-            return mockHttpMethod;
-        }
-    };
+                                                                                 @Override
+                                                                                 protected HttpMethod createHttpClientMethod(
+                                                                                         final RestRequest request) {
+                                                                                     mockHttpMethod = new MockHttpMethod(
+                                                                                             request.getMethod().name());
+                                                                                     return mockHttpMethod;
+                                                                                 }
+                                                                             };
 
-    private final RestClientImpl mockRestClientAlwaysThrowsProtocolException = new RestClientImpl(new MockHttpClient(new HttpException())) {
+    private final RestClientImpl mockRestClientAlwaysThrowsProtocolException = new RestClientImpl(new MockHttpClient(
+                                                                                     new HttpException())) {
 
-        @Override
-        protected HttpMethod createHttpClientMethod(RestRequest request) {
-            mockHttpMethod = new MockHttpMethod(request.getMethod().name());
-            return mockHttpMethod;
-        }
-    };
+                                                                                 @Override
+                                                                                 protected HttpMethod createHttpClientMethod(
+                                                                                         final RestRequest request) {
+                                                                                     mockHttpMethod = new MockHttpMethod(
+                                                                                             request.getMethod().name());
+                                                                                     return mockHttpMethod;
+                                                                                 }
+                                                                             };
 
-    private final RestRequest validRestRequest = (RestRequest) new RestRequest().setMethod(RestRequest.Method.Get).setResource("/a/resource");
+    private final RestRequest    validRestRequest                            = (RestRequest) new RestRequest()
+                                                                                     .setMethod(RestRequest.Method.Get)
+                                                                                     .setResource("/a/resource");
 
     public RestClientTest() {
         super();
@@ -84,8 +95,8 @@ public class RestClientTest {
 
     @Test
     public void mustBeConstructedWithAValidHttpClient() {
-        HttpClient httpClient = new HttpClient();
-        RestClientImpl restClient = new RestClientImpl(httpClient);
+        final HttpClient httpClient = new HttpClient();
+        final RestClientImpl restClient = new RestClientImpl(httpClient);
         assertSame(httpClient, restClient.getClient());
     }
 
@@ -112,8 +123,9 @@ public class RestClientTest {
     @Test(expected = IllegalStateException.class)
     public void mustNotifyCallerIfHttpCallFailsDueToAnIoFailure() {
         try {
+            mockRestClientAlwaysThrowsIOException.allowRedirect(false);
             mockRestClientAlwaysThrowsIOException.execute(validRestRequest);
-        } catch (IllegalStateException e) {
+        } catch (final IllegalStateException e) {
             throw e;
         } finally {
             mockHttpMethod.verifyConnectionReleased();
@@ -123,8 +135,9 @@ public class RestClientTest {
     @Test(expected = IllegalStateException.class)
     public void mustNotifyCallerIfHttpCallFailsDueToAProtocolFailure() {
         try {
+            mockRestClientAlwaysThrowsProtocolException.allowRedirect(false);
             mockRestClientAlwaysThrowsProtocolException.execute(validRestRequest);
-        } catch (IllegalStateException e) {
+        } catch (final IllegalStateException e) {
             throw e;
         } finally {
             mockHttpMethod.verifyConnectionReleased();
@@ -133,7 +146,9 @@ public class RestClientTest {
 
     @Test
     public void responseShouldContainTheResultCodeOfASuccessfullHttpCall() {
-        RestResponse restResponse = mockRestClientAlwaysOK.execute(validRestRequest);
+        mockRestClientAlwaysOK.allowRedirect(false);
+        final RestResponse restResponse = mockRestClientAlwaysOK.execute(validRestRequest);
+
         mockHttpMethod.verifyConnectionReleased();
         assertEquals(Integer.valueOf(200), restResponse.getStatusCode());
     }
@@ -151,15 +166,16 @@ public class RestClientTest {
 
     @Test
     public void shouldCreateHttpMethodsToMatchTheMethodInTheRestRequest() {
-        MockRestClient mockRestClientWithVerificationOfHttpMethodCreation = new MockRestClient(new MockHttpClient(200));
+        final MockRestClient mockRestClientWithVerificationOfHttpMethodCreation = new MockRestClient(
+                new MockHttpClient(200));
         mockRestClientWithVerificationOfHttpMethodCreation.verifyCorrectHttpMethodCreation();
     }
 
     @Test(expected = IllegalStateException.class)
     public void shouldNotifyCallerThatMethodMatchingTheOneInTheRestRequestCannotBeFound() {
-        RestClientImpl client = new MockRestClient(new MockHttpClient(200)) {
+        final RestClientImpl client = new MockRestClient(new MockHttpClient(200)) {
             @Override
-            protected String getMethodClassnameFromMethodName(String mName) {
+            protected String getMethodClassnameFromMethodName(final String mName) {
                 return "i.dont.Exist";
             }
         };
@@ -168,9 +184,9 @@ public class RestClientTest {
 
     @Test(expected = IllegalStateException.class)
     public void shouldNotifyCallerThatMethodMatchingTheOneInTheRestRequestCannotBeInstantiated() {
-        RestClientImpl client = new MockRestClient(new MockHttpClient(200)) {
+        final RestClientImpl client = new MockRestClient(new MockHttpClient(200)) {
             @Override
-            protected String getMethodClassnameFromMethodName(String mName) {
+            protected String getMethodClassnameFromMethodName(final String mName) {
                 return HttpMethodClassCannotBeInstantiated.class.getName();
             }
         };
@@ -179,9 +195,9 @@ public class RestClientTest {
 
     @Test(expected = IllegalStateException.class)
     public void shouldNotifyCallerThatMethodMatchingTheOneInTheRestRequestFailsWhenInstantiating() {
-        RestClientImpl client = new MockRestClient(new MockHttpClient(200)) {
+        final RestClientImpl client = new MockRestClient(new MockHttpClient(200)) {
             @Override
-            protected String getMethodClassnameFromMethodName(String mName) {
+            protected String getMethodClassnameFromMethodName(final String mName) {
                 return HttpMethodClassFailsWhenCreating.class.getName();
             }
         };
@@ -190,14 +206,14 @@ public class RestClientTest {
 
     @Test
     public void shouldCreateMultipartEntityIfRestRequestHasNonNullMultipartFileName() throws Exception {
-        String filename = "multiparttest";
-        File f = File.createTempFile(filename, null);
+        final String filename = "multiparttest";
+        final File f = File.createTempFile(filename, null);
         f.deleteOnExit();
 
         mockHttpMethod = new MockHttpMethod("mock");
         validRestRequest.addHeader("a", "header");
         validRestRequest.setMultipartFileName(f.getAbsolutePath());
-        RestClientImpl client = new RestClientImpl(new MockHttpClient(200));
+        final RestClientImpl client = new RestClientImpl(new MockHttpClient(200));
         client.configureHttpMethod(mockHttpMethod, "localhost", validRestRequest);
         assertTrue(mockHttpMethod.isMultipartRequest());
     }
@@ -207,20 +223,20 @@ public class RestClientTest {
         mockHttpMethod = new MockHttpMethod("mock");
         validRestRequest.addHeader("a", "header");
         validRestRequest.setMultipartFileName("multiparttest");
-        RestClientImpl client = new RestClientImpl(new MockHttpClient(200));
+        final RestClientImpl client = new RestClientImpl(new MockHttpClient(200));
         client.configureHttpMethod(mockHttpMethod, "localhost", validRestRequest);
     }
 
     @Test
     public void shouldCreateFileRequestEntityIfRestRequestHasNonNullFileName() throws Exception {
-        String filename = "filetest";
-        File f = File.createTempFile(filename, null);
+        final String filename = "filetest";
+        final File f = File.createTempFile(filename, null);
         f.deleteOnExit();
 
         mockHttpMethod = new MockHttpMethod("mock");
         validRestRequest.addHeader("a", "header");
         validRestRequest.setFileName(f.getAbsolutePath());
-        RestClientImpl client = new RestClientImpl(new MockHttpClient(200));
+        final RestClientImpl client = new RestClientImpl(new MockHttpClient(200));
         client.configureHttpMethod(mockHttpMethod, "localhost", validRestRequest);
         assertTrue(mockHttpMethod.isFileRequest());
     }
@@ -230,7 +246,7 @@ public class RestClientTest {
         mockHttpMethod = new MockHttpMethod("mock");
         validRestRequest.addHeader("a", "header");
         validRestRequest.setFileName("somefilethatdoesntexist");
-        RestClientImpl client = new RestClientImpl(new MockHttpClient(200));
+        final RestClientImpl client = new RestClientImpl(new MockHttpClient(200));
         client.configureHttpMethod(mockHttpMethod, "localhost", validRestRequest);
     }
 }
