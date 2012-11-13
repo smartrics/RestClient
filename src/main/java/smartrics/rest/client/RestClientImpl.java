@@ -27,7 +27,12 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.List;
 
-import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.URI;
+import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
 import org.apache.commons.httpclient.methods.FileRequestEntity;
 import org.apache.commons.httpclient.methods.RequestEntity;
@@ -42,36 +47,40 @@ import org.slf4j.LoggerFactory;
  */
 public class RestClientImpl implements RestClient {
 
-    private static Logger LOG = LoggerFactory.getLogger(RestClientImpl.class);
+    private static Logger    LOG = LoggerFactory.getLogger(RestClientImpl.class);
 
     private final HttpClient client;
 
-    private String baseUrl;
+    private String           baseUrl;
+
+    private boolean          allowRedirect;
 
     /**
-     * Constructor allowing the injection of an {@code
-     * org.apache.commons.httpclient.HttpClient}.
+     * Constructor allowing the injection of an {@code org.apache.commons.httpclient.HttpClient}.
      * 
      * @param client
-     *            the client
-     * See {@link org.apache.commons.httpclient.HttpClient}
+     *            the client See {@link org.apache.commons.httpclient.HttpClient}
      */
-    public RestClientImpl(HttpClient client) {
-        if (client == null)
+    public RestClientImpl(final HttpClient client) {
+        if (client == null) {
             throw new IllegalArgumentException("Null HttpClient instance");
+        }
+        allowRedirect = true;
         this.client = client;
     }
 
     /**
      * See {@link smartrics.rest.client.RestClient#setBaseUrl(java.lang.String)}
      */
-    public void setBaseUrl(String bUrl) {
-        this.baseUrl = bUrl;
+    @Override
+    public void setBaseUrl(final String bUrl) {
+        baseUrl = bUrl;
     }
 
     /**
      * See {@link smartrics.rest.client.RestClient#getBaseUrl()}
      */
+    @Override
     public String getBaseUrl() {
         return baseUrl;
     }
@@ -79,9 +88,8 @@ public class RestClientImpl implements RestClient {
     /**
      * Returns the Http client instance used by this implementation.
      * 
-     * @return the instance of HttpClient
-     * See {@link org.apache.commons.httpclient.HttpClient}
-     * See {@link smartrics.rest.client.RestClientImpl#RestClientImpl(HttpClient)}
+     * @return the instance of HttpClient See {@link org.apache.commons.httpclient.HttpClient} See
+     *         {@link smartrics.rest.client.RestClientImpl#RestClientImpl(HttpClient)}
      */
     public HttpClient getClient() {
         return client;
@@ -90,37 +98,44 @@ public class RestClientImpl implements RestClient {
     /**
      * See {@link smartrics.rest.client.RestClient#execute(smartrics.rest.client.RestRequest)}
      */
-    public RestResponse execute(RestRequest request) {
+    @Override
+    public RestResponse execute(final RestRequest request) {
         return execute(getBaseUrl(), request);
     }
 
     /**
      * See {@link smartrics.rest.client.RestClient#execute(java.lang.String, smartrics.rest.client.RestRequest)}
      */
-    public RestResponse execute(String hostAddr, final RestRequest request) {
-        if (request == null || !request.isValid())
+    @Override
+    public RestResponse execute(final String hostAddr, final RestRequest request) {
+        if (request == null || !request.isValid()) {
             throw new IllegalArgumentException("Invalid request " + request);
-        if (request.getTransactionId() == null)
+        }
+        if (request.getTransactionId() == null) {
             request.setTransactionId(Long.valueOf(System.currentTimeMillis()));
+        }
         LOG.debug("request: {}", request);
-        HttpMethod m = createHttpClientMethod(request);
+        final HttpMethod m = createHttpClientMethod(request);
         configureHttpMethod(m, hostAddr, request);
-        RestResponse resp = new RestResponse();
+        final RestResponse resp = new RestResponse();
         resp.setTransactionId(request.getTransactionId());
         resp.setResource(request.getResource());
         try {
+            if (RestRequest.Method.Get.equals(request.getMethod())) {
+                m.setFollowRedirects(allowRedirect);
+            }
             client.executeMethod(m);
-            for (Header h : m.getResponseHeaders()) {
+            for (final Header h : m.getResponseHeaders()) {
                 resp.addHeader(h.getName(), h.getValue());
             }
             resp.setStatusCode(m.getStatusCode());
             resp.setStatusText(m.getStatusText());
             resp.setBody(m.getResponseBodyAsString());
-        } catch (HttpException e) {
-            String message = "Http call failed for protocol failure";
+        } catch (final HttpException e) {
+            final String message = "Http call failed for protocol failure";
             throw new IllegalStateException(message, e);
-        } catch (IOException e) {
-            String message = "Http call failed for IO failure";
+        } catch (final IOException e) {
+            final String message = "Http call failed for IO failure";
             throw new IllegalStateException(message, e);
         } finally {
             m.releaseConnection();
@@ -130,8 +145,7 @@ public class RestClientImpl implements RestClient {
     }
 
     /**
-     * Configures the instance of HttpMethod with the data in the request and
-     * the host address.
+     * Configures the instance of HttpMethod with the data in the request and the host address.
      * 
      * @param m
      *            the method class to configure
@@ -140,7 +154,7 @@ public class RestClientImpl implements RestClient {
      * @param request
      *            the rest request
      */
-    protected void configureHttpMethod(HttpMethod m, String hostAddr, final RestRequest request) {
+    protected void configureHttpMethod(final HttpMethod m, final String hostAddr, final RestRequest request) {
         addHeaders(m, request);
         setUri(m, hostAddr, request);
         m.setQueryString(request.getQuery());
@@ -155,25 +169,31 @@ public class RestClientImpl implements RestClient {
                     requestEntity = configureMultipartFileUpload(m, request, requestEntity, fileName);
                 } else {
                     requestEntity = new RequestEntity() {
+                        @Override
                         public boolean isRepeatable() {
                             return true;
                         }
 
-                        public void writeRequest(OutputStream out) throws IOException {
-                            PrintWriter printer = new PrintWriter(out);
+                        @Override
+                        public void writeRequest(final OutputStream out) throws IOException {
+                            final PrintWriter printer = new PrintWriter(out);
                             printer.print(request.getBody());
                             printer.flush();
                         }
 
+                        @Override
                         public long getContentLength() {
                             return request.getBody().getBytes().length;
                         }
 
+                        @Override
                         public String getContentType() {
-                            List<smartrics.rest.client.RestData.Header> values = request.getHeader("Content-Type");
+                            final List<smartrics.rest.client.RestData.Header> values = request
+                                    .getHeader("Content-Type");
                             String v = "text/xml";
-                            if (values.size() != 0)
+                            if (values.size() != 0) {
                                 v = values.get(0).getValue();
+                            }
                             return v;
                         }
                     };
@@ -183,17 +203,19 @@ public class RestClientImpl implements RestClient {
         }
     }
 
-    private RequestEntity configureMultipartFileUpload(HttpMethod m, final RestRequest request, RequestEntity requestEntity, String fileName) {
-        File file = new File(fileName);
+    private RequestEntity configureMultipartFileUpload(final HttpMethod m, final RestRequest request,
+            RequestEntity requestEntity, final String fileName) {
+        final File file = new File(fileName);
         try {
-            requestEntity = new MultipartRequestEntity(new Part[] { new FilePart(request.getMultipartFileParameterName(), file) }, ((EntityEnclosingMethod) m).getParams());
-        } catch (FileNotFoundException e) {
+            requestEntity = new MultipartRequestEntity(new Part[] { new FilePart(
+                    request.getMultipartFileParameterName(), file) }, ((EntityEnclosingMethod) m).getParams());
+        } catch (final FileNotFoundException e) {
             throw new IllegalArgumentException("File not found: " + fileName, e);
         }
         return requestEntity;
     }
 
-    private RequestEntity configureFileUpload(String fileName) {
+    private RequestEntity configureFileUpload(final String fileName) {
         final File file = new File(fileName);
         if (!file.exists()) {
             throw new IllegalArgumentException("File not found: " + fileName);
@@ -201,78 +223,84 @@ public class RestClientImpl implements RestClient {
         return new FileRequestEntity(file, "application/octet-stream");
     }
 
-    public String getContentType(RestRequest request) {
-        List<smartrics.rest.client.RestData.Header> values = request.getHeader("Content-Type");
+    public String getContentType(final RestRequest request) {
+        final List<smartrics.rest.client.RestData.Header> values = request.getHeader("Content-Type");
         String v = "text/xml";
-        if (values.size() != 0)
+        if (values.size() != 0) {
             v = values.get(0).getValue();
+        }
         return v;
     }
 
-    private void setUri(HttpMethod m, String hostAddr, RestRequest request) {
-        String host = hostAddr == null ? client.getHostConfiguration().getHost() : hostAddr;
-        if (host == null)
-            throw new IllegalStateException("hostAddress is null: please config httpClient host configuration or " + "pass a valid host address or config a baseUrl on this client");
-        String uriString = host + request.getResource();
-        boolean escaped = request.isResourceUriEscaped();
+    private void setUri(final HttpMethod m, final String hostAddr, final RestRequest request) {
+        final String host = hostAddr == null ? client.getHostConfiguration().getHost() : hostAddr;
+        if (host == null) {
+            throw new IllegalStateException("hostAddress is null: please config httpClient host configuration or "
+                    + "pass a valid host address or config a baseUrl on this client");
+        }
+        final String uriString = host + request.getResource();
+        final boolean escaped = request.isResourceUriEscaped();
         try {
             m.setURI(createUri(uriString, escaped));
-        } catch (URIException e) {
+        } catch (final URIException e) {
             throw new IllegalStateException("Problem when building URI: " + uriString, e);
-        } catch (NullPointerException e) {
+        } catch (final NullPointerException e) {
             throw new IllegalStateException("Building URI with null string", e);
         }
     }
 
-    protected URI createUri(String uriString, boolean escaped) throws URIException {
+    protected URI createUri(final String uriString, final boolean escaped) throws URIException {
         return new URI(uriString, escaped);
     }
 
     /**
-     * factory method that maps a string with a HTTP method name to an
-     * implementation class in Apache HttpClient. Currently the name is mapped
-     * to <code>org.apache.commons.httpclient.methods.%sMethod</code> where
-     * <code>%s</code> is the parameter mName.
+     * factory method that maps a string with a HTTP method name to an implementation class in Apache HttpClient.
+     * Currently the name is mapped to <code>org.apache.commons.httpclient.methods.%sMethod</code> where <code>%s</code>
+     * is the parameter mName.
      * 
      * @param mName
      *            the method name
      * @return the method class
      */
-    protected String getMethodClassnameFromMethodName(String mName) {
+    protected String getMethodClassnameFromMethodName(final String mName) {
         return String.format("org.apache.commons.httpclient.methods.%sMethod", mName);
     }
 
     /**
-     * Utility method that creates an instance of {@code
-     * org.apache.commons.httpclient.HttpMethod}.
+     * Utility method that creates an instance of {@code org.apache.commons.httpclient.HttpMethod}.
      * 
      * @param request
      *            the rest request
-     * @return the instance of {@code org.apache.commons.httpclient.HttpMethod}
-     *         matching the method in RestRequest.
+     * @return the instance of {@code org.apache.commons.httpclient.HttpMethod} matching the method in RestRequest.
      */
     @SuppressWarnings("unchecked")
-    protected HttpMethod createHttpClientMethod(RestRequest request) {
-        String mName = request.getMethod().toString();
-        String className = getMethodClassnameFromMethodName(mName);
+    protected HttpMethod createHttpClientMethod(final RestRequest request) {
+        final String mName = request.getMethod().toString();
+        final String className = getMethodClassnameFromMethodName(mName);
         try {
-            Class<HttpMethod> clazz = (Class<HttpMethod>) Class.forName(className);
-            HttpMethod m = clazz.newInstance();
+            final Class<HttpMethod> clazz = (Class<HttpMethod>) Class.forName(className);
+            final HttpMethod m = clazz.newInstance();
             return m;
-        } catch (ClassNotFoundException e) {
-            throw new IllegalStateException(className + " not found: you may be using a too old or " + "too new version of HttpClient", e);
-        } catch (InstantiationException e) {
+        } catch (final ClassNotFoundException e) {
+            throw new IllegalStateException(className + " not found: you may be using a too old or "
+                    + "too new version of HttpClient", e);
+        } catch (final InstantiationException e) {
             throw new IllegalStateException("An object of type " + className + " cannot be instantiated", e);
-        } catch (IllegalAccessException e) {
+        } catch (final IllegalAccessException e) {
             throw new IllegalStateException("The default ctor for type " + className + " cannot be invoked", e);
-        } catch (RuntimeException e) {
+        } catch (final RuntimeException e) {
             throw new IllegalStateException("Exception when instantiating: " + className, e);
         }
     }
 
-    private void addHeaders(HttpMethod m, RestRequest request) {
-        for (RestData.Header h : request.getHeaders()) {
+    private void addHeaders(final HttpMethod m, final RestRequest request) {
+        for (final RestData.Header h : request.getHeaders()) {
             m.addRequestHeader(h.getName(), h.getValue());
         }
+    }
+
+    @Override
+    public void allowRedirect(final boolean allowRedirect) {
+        this.allowRedirect = allowRedirect;
     }
 }
