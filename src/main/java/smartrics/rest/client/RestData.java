@@ -76,6 +76,7 @@ public abstract class RestData {
 
 	private final List<Header> headers = new ArrayList<Header>();
 	private String body;
+    private byte[] rawBody;
 	private String resource;
 	private Long transactionId;
 
@@ -95,6 +96,22 @@ public abstract class RestData {
 		this.body = body;
 		return this;
 	}
+
+    /**
+     * @return Returns the rawBody.
+     */
+    public byte[] getRawBody()
+    {
+        return rawBody;
+    }
+
+    /**
+     * @param rawBody The rawBody to set.
+     */
+    public void setRawBody(byte[] rawBody)
+    {
+        this.rawBody = rawBody;
+    }
 
 	/**
 	 * @return the resource type (for example {@code /resource-type}) for this
