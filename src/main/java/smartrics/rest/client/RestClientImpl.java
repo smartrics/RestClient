@@ -115,7 +115,7 @@ public class RestClientImpl implements RestClient {
             }
             resp.setStatusCode(m.getStatusCode());
             resp.setStatusText(m.getStatusText());
-            resp.setBody(m.getResponseBodyAsString());
+            resp.setRawBody(m.getResponseBody());
         } catch (HttpException e) {
             String message = "Http call failed for protocol failure";
             throw new IllegalStateException(message, e);

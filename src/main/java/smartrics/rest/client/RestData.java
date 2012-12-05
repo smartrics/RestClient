@@ -20,6 +20,7 @@
  */
 package smartrics.rest.client;
 
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -29,8 +30,7 @@ import java.util.Map;
  * Base class for holding shared data between {@code RestRequest} and {@code RestResponse}.
  */
 public abstract class RestData {
-	public final static String LINE_SEPARATOR = System
-			.getProperty("line.separator");
+	public final static String LINE_SEPARATOR = System.getProperty("line.separator");
 
 	/**
 	 * Holds an Http Header.
@@ -75,15 +75,49 @@ public abstract class RestData {
 	}
 
 	private final List<Header> headers = new ArrayList<Header>();
-	private String body;
+	private byte raw[];
 	private String resource;
 	private Long transactionId;
+	private String encoding = "UTF-8";
 
 	/**
 	 * @return the body of this http request/response
 	 */
 	public String getBody() {
-		return body;
+		if(raw == null) {
+			return null;
+		}
+		try {
+			return new String(raw, encoding);
+		} catch (UnsupportedEncodingException e) {
+			throw new IllegalStateException("Unsupported encoding: " + encoding);
+		}
+	}
+
+	public byte[] getRawBody() {
+		return raw;
+	}
+
+	public void setEncoding(String enc) {
+		try {
+			new String(new byte[]{ 65 }, enc);
+		} catch(UnsupportedEncodingException e) {
+			throw new IllegalArgumentException("Unsupported encoding: " + enc);
+		}
+		this.encoding = enc;
+	}
+	
+	public String getEncoding() {
+		return encoding;
+	}
+	
+	public RestData setBody(String body) {
+		if(body == null) {
+			setRawBody(null);
+		} else {
+			setRawBody(body.getBytes());
+		}
+		return this;
 	}
 
 	/**
@@ -91,8 +125,8 @@ public abstract class RestData {
 	 *            the body
 	 * @return this RestData
 	 */
-	public RestData setBody(String body) {
-		this.body = body;
+	public RestData setRawBody(byte[] rawBody) {
+		this.raw = rawBody;
 		return this;
 	}
 
@@ -211,7 +245,7 @@ public abstract class RestData {
 		for (Header h : getHeaders()) {
 			builder.append(h).append(LINE_SEPARATOR);
 		}
-		if (body != null) {
+		if (raw != null) {
 			builder.append(LINE_SEPARATOR);
 			builder.append(this.getBody());
 		} else {
