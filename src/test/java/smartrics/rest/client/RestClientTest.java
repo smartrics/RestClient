@@ -33,6 +33,8 @@ import org.apache.commons.httpclient.HttpMethod;
 import org.junit.Before;
 import org.junit.Test;
 
+import smartrics.rest.client.RestRequest.Method;
+
 public class RestClientTest {
 
     private MockHttpMethod mockHttpMethod;
@@ -82,6 +84,36 @@ public class RestClientTest {
         validRestRequest.addHeader("a", "v");
     }
 
+    @Test
+    public void mustHandleAllHttpMethods() {
+        HttpClient httpClient = new HttpClient();
+        RestClientImpl restClient = new RestClientImpl(httpClient);
+        RestRequest r = new RestRequest();
+        r.setMethod(Method.Get);
+        HttpMethod m = restClient.createHttpClientMethod(r);
+        assertEquals("GET", m.getName());
+
+        r.setMethod(Method.Post);
+        m = restClient.createHttpClientMethod(r);
+        assertEquals("POST", m.getName());
+
+        r.setMethod(Method.Put);
+        m = restClient.createHttpClientMethod(r);
+        assertEquals("PUT", m.getName());
+
+        r.setMethod(Method.Delete);
+        m = restClient.createHttpClientMethod(r);
+        assertEquals("DELETE", m.getName());
+
+        r.setMethod(Method.Options);
+        m = restClient.createHttpClientMethod(r);
+        assertEquals("OPTIONS", m.getName());
+
+        r.setMethod(Method.Head);
+        m = restClient.createHttpClientMethod(r);
+        assertEquals("HEAD", m.getName());
+    }
+    
     @Test
     public void mustBeConstructedWithAValidHttpClient() {
         HttpClient httpClient = new HttpClient();
