@@ -27,7 +27,12 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.List;
 
-import org.apache.commons.httpclient.*;
+import org.apache.commons.httpclient.Header;
+import org.apache.commons.httpclient.HttpClient;
+import org.apache.commons.httpclient.HttpException;
+import org.apache.commons.httpclient.HttpMethod;
+import org.apache.commons.httpclient.URI;
+import org.apache.commons.httpclient.URIException;
 import org.apache.commons.httpclient.methods.EntityEnclosingMethod;
 import org.apache.commons.httpclient.methods.FileRequestEntity;
 import org.apache.commons.httpclient.methods.RequestEntity;
@@ -257,17 +262,16 @@ public class RestClientImpl implements RestClient {
         String className = getMethodClassnameFromMethodName(mName);
         try {
             Class<HttpMethod> clazz = (Class<HttpMethod>) Class.forName(className);
-            HttpMethod m = clazz.newInstance();
-            return m;
+        	return clazz.newInstance();
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException(className + " not found: you may be using a too old or " + "too new version of HttpClient", e);
         } catch (InstantiationException e) {
             throw new IllegalStateException("An object of type " + className + " cannot be instantiated", e);
         } catch (IllegalAccessException e) {
-            throw new IllegalStateException("The default ctor for type " + className + " cannot be invoked", e);
+            throw new IllegalStateException("The default ctor for type " + className + " cannot be accessed", e);
         } catch (RuntimeException e) {
             throw new IllegalStateException("Exception when instantiating: " + className, e);
-        }
+		}
     }
 
     private void addHeaders(HttpMethod m, RestRequest request) {
