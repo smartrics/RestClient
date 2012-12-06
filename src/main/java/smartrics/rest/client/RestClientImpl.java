@@ -150,7 +150,6 @@ public class RestClientImpl implements RestClient {
         addHeaders(m, request);
         setUri(m, hostAddr, request);
         m.setQueryString(request.getQuery());
-        m.setFollowRedirects(request.isFollowRedirect());
         if (m instanceof EntityEnclosingMethod) {
             RequestEntity requestEntity = null;
             String fileName = request.getFileName();
@@ -187,7 +186,10 @@ public class RestClientImpl implements RestClient {
                 }
             }
             ((EntityEnclosingMethod) m).setRequestEntity(requestEntity);
+        } else {
+            m.setFollowRedirects(request.isFollowRedirect());
         }
+        	
     }
 
     private RequestEntity configureMultipartFileUpload(HttpMethod m, final RestRequest request, RequestEntity requestEntity, String fileName) {
