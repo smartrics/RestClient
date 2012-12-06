@@ -37,6 +37,8 @@ import org.apache.commons.httpclient.methods.multipart.Part;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.commons.httpclient.methods.PostMethod;
+
 /**
  * A generic REST client based on {@code HttpClient}.
  */
@@ -116,6 +118,9 @@ public class RestClientImpl implements RestClient {
             resp.setStatusCode(m.getStatusCode());
             resp.setStatusText(m.getStatusText());
             resp.setBody(m.getResponseBodyAsString());
+            if (m instanceof PostMethod) {
+                resp.setResponseCharset(((PostMethod) m).getResponseCharSet());
+            }
         } catch (HttpException e) {
             String message = "Http call failed for protocol failure";
             throw new IllegalStateException(message, e);
