@@ -25,6 +25,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
 import org.apache.commons.httpclient.Header;
@@ -262,7 +263,11 @@ public class RestClientImpl implements RestClient {
         String className = getMethodClassnameFromMethodName(mName);
         try {
             Class<HttpMethod> clazz = (Class<HttpMethod>) Class.forName(className);
-        	return clazz.newInstance();
+            if(className.endsWith("TraceMethod")) {
+            	return clazz.getConstructor(String.class).newInstance("http://dummy.com");
+            } else {
+            	return clazz.newInstance();
+            }
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException(className + " not found: you may be using a too old or " + "too new version of HttpClient", e);
         } catch (InstantiationException e) {
@@ -271,6 +276,10 @@ public class RestClientImpl implements RestClient {
             throw new IllegalStateException("The default ctor for type " + className + " cannot be accessed", e);
         } catch (RuntimeException e) {
             throw new IllegalStateException("Exception when instantiating: " + className, e);
+		} catch (InvocationTargetException e) {
+            throw new IllegalStateException("The ctor with String.class arg for type " + className + " cannot be invoked", e);
+		} catch (NoSuchMethodException e) {
+            throw new IllegalStateException("The ctor with String.class arg for type " + className + " doesn't exist", e);
 		}
     }
 
