@@ -150,6 +150,7 @@ public class RestClientImpl implements RestClient {
         addHeaders(m, request);
         setUri(m, hostAddr, request);
         m.setQueryString(request.getQuery());
+        m.setFollowRedirects(request.isFollowRedirect());
         if (m instanceof EntityEnclosingMethod) {
             RequestEntity requestEntity = null;
             String fileName = request.getFileName();

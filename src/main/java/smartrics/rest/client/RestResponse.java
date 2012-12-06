@@ -23,7 +23,7 @@ package smartrics.rest.client;
 /**
  * Wraps a REST response object
  */
-public class RestResponse extends RestData{
+public class RestResponse extends RestData {
 	private String statusText;
 	private Integer statusCode;
 

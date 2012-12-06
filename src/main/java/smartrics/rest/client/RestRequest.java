@@ -37,6 +37,7 @@ public class RestRequest extends RestData {
     private String multipartFileParameterName = FILE;
     private String query;
     private Method method;
+    private boolean followRedirect = true;
     private boolean resourceUriEscaped = false;
 
     /**
@@ -123,6 +124,15 @@ public class RestRequest extends RestData {
         return this;
     }
 
+    public RestRequest setFollowRedirect(boolean v) {
+    	this.followRedirect = v;
+    	return this;
+    }
+    
+    public boolean isFollowRedirect() {
+    	return followRedirect;
+    }
+    
     /**
      * Sets the upload file name for this request.
      * 
@@ -157,9 +167,11 @@ public class RestRequest extends RestData {
 	/**
 	 * @param escaped whether resource uri is % escaped or not
 	 */
-	public void setResourceUriEscaped(boolean escaped) {
+	public RestRequest setResourceUriEscaped(boolean escaped) {
 		this.resourceUriEscaped = escaped;
+		return this;
 	}
+	
     
     /**
      * String representation of this request.
