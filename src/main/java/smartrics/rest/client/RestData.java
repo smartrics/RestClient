@@ -31,6 +31,7 @@ import java.util.Map;
  */
 public abstract class RestData {
 	public final static String LINE_SEPARATOR = System.getProperty("line.separator");
+	public static String DEFAULT_ENCODING = "UTF-8";
 
 	/**
 	 * Holds an Http Header.
@@ -78,7 +79,6 @@ public abstract class RestData {
 	private byte raw[];
 	private String resource;
 	private Long transactionId;
-	private String encoding = "UTF-8";
 
 	/**
 	 * @return the body of this http request/response
@@ -88,27 +88,14 @@ public abstract class RestData {
 			return null;
 		}
 		try {
-			return new String(raw, encoding);
+			return new String(raw, getCharset());
 		} catch (UnsupportedEncodingException e) {
-			throw new IllegalStateException("Unsupported encoding: " + encoding);
+			throw new IllegalStateException("Unsupported encoding: " + getCharset());
 		}
 	}
 
 	public byte[] getRawBody() {
 		return raw;
-	}
-
-	public void setEncoding(String enc) {
-		try {
-			new String(new byte[]{ 65 }, enc);
-		} catch(UnsupportedEncodingException e) {
-			throw new IllegalArgumentException("Unsupported encoding: " + enc);
-		}
-		this.encoding = enc;
-	}
-	
-	public String getEncoding() {
-		return encoding;
 	}
 	
 	public RestData setBody(String body) {
@@ -252,6 +239,37 @@ public abstract class RestData {
 			builder.append("[empty/null body]");
 		}
 		return builder.toString();
+	}
+	
+	public String getContentType() {
+		return getHeaderValue("Content-Type");
+	}
+	
+	public String getCharset() {
+		String v = getHeaderValue("Content-Type");
+		if(v == null || !v.contains("charset")) {
+			return DEFAULT_ENCODING;
+		}
+		int pos = v.indexOf("charset");
+		pos = v.indexOf("=", pos);
+		try {
+			String substring = v.substring(pos + 1);
+			return substring.trim();
+		} catch(RuntimeException e) {
+			return DEFAULT_ENCODING;
+		}
+	}
+	
+	public String getContentLength() {
+		return getHeaderValue("Content-Length");
+	}
+	
+	public String getHeaderValue(String name) {
+		List<Header> headers = getHeader(name);
+		if(headers.size() > 0) {
+			return headers.get(0).getValue();
+		}
+		return null;
 	}
 	
 }
