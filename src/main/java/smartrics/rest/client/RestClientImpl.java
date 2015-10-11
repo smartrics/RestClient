@@ -23,10 +23,13 @@ package smartrics.rest.client;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
+import java.util.zip.GZIPInputStream;
 
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
@@ -121,7 +124,28 @@ public class RestClientImpl implements RestClient {
             }
             resp.setStatusCode(m.getStatusCode());
             resp.setStatusText(m.getStatusText());
-            resp.setRawBody(m.getResponseBody());
+            GZIPInputStream gzin; 
+            if (m.getResponseBody() != null ) {                
+                if(m.getResponseHeader("Content-Encoding") != null  
+                         && m.getResponseHeader("Content-Encoding").getValue().toLowerCase().indexOf("gzip") > -1) {  
+                        //For GZip response  
+                        InputStream is = m.getResponseBodyAsStream();  
+                        gzin = new GZIPInputStream(is);  
+                        InputStreamReader isr = new InputStreamReader(gzin, "UTF-8");   
+                        java.io.BufferedReader br = new java.io.BufferedReader(isr);  
+                        StringBuffer sb = new StringBuffer();  
+                        String tempbf;  
+                        while ((tempbf = br.readLine()) != null) {  
+                            sb.append(tempbf);  
+                            sb.append("\r\n");  
+                        }  
+                        isr.close();  
+                        gzin.close();  
+                        resp.setRawBody(sb.toString().getBytes());
+                    }  else {  
+                    	 resp.setRawBody(m.getResponseBody()); 
+                }  
+            }                      
         } catch (HttpException e) {
             String message = "Http call failed for protocol failure";
             throw new IllegalStateException(message, e);
