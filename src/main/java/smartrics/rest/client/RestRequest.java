@@ -20,6 +20,10 @@
  */
 package smartrics.rest.client;
 
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
 /**
  * Wraps a REST request object.
  */
@@ -33,8 +37,11 @@ public class RestRequest extends RestData {
 
     private static final String FILE = "file";
     private String fileName;
+    @Deprecated
     private String multipartFileName;
+    @Deprecated
     private String multipartFileParameterName = FILE;
+    private Map<String,RestMultipart> multipartFileByParamName = new LinkedHashMap<String, RestMultipart>();
     private String query;
     private Method method;
     private boolean followRedirect = true;
@@ -86,16 +93,30 @@ public class RestRequest extends RestData {
         return fileName;
     }
 
+//    /**
+//     * @return the multipart upload file name for this request
+//     */
+//    public String getMultipartFileName() {
+//        return multipartFileName;
+//    }
+
     /**
-     * @return the multipart upload file name for this request
+     * @return the multipart upload files name for this request
      */
-    public String getMultipartFileName() {
-        return multipartFileName;
+    public Map<String,RestMultipart> getMultipartFileNames() {
+        // Add History Api
+        if  ( (this.multipartFileName!=null) && (!this.multipartFileName.trim().isEmpty()) )  {
+            RestMultipart restMultipart = new RestMultipart(this.multipartFileName);
+            this.addMultipartFile(   this.multipartFileParameterName, restMultipart);
+        }
+        // Return the Map
+        return multipartFileByParamName;
     }
 
     /**
      * @return the multipart file form parameter name for this request
      */
+    @Deprecated
     public String getMultipartFileParameterName() {
         return multipartFileParameterName;
     }
@@ -107,6 +128,7 @@ public class RestRequest extends RestData {
      *            the multipart file form parameter name
      * @return this request
      */
+    @Deprecated
     public RestRequest setMultipartFileParameterName(String multipartFileParameterName) {
         this.multipartFileParameterName = multipartFileParameterName;
         return this;
@@ -119,8 +141,67 @@ public class RestRequest extends RestData {
      *            the multipart file name
      * @return this request
      */
+    @Deprecated
     public RestRequest setMultipartFileName(String multipartFileName) {
         this.multipartFileName = multipartFileName;
+        return this;
+    }
+
+
+    /**
+     * Add the multipart upload file name for this request.
+     *
+     * @param multipartFileName
+     *            the multipart file name
+     * @return this request
+     */
+    public RestRequest addMultipartFileName(String multipartFileName ) {
+        RestMultipart restMultipart = new RestMultipart(multipartFileName);
+        return this.addMultipartFile(FILE, restMultipart);
+    }
+
+    /**
+     * Add the multipart upload file name for this request.
+     *
+     * @param multipartFileName
+     *            the multipart file name
+     * @param contentType
+     *            the multipart contentType
+     * @return this request
+     */
+    public RestRequest addMultipartFileName(String multipartFileName, String contentType ) {
+        RestMultipart restMultipart = new RestMultipart(multipartFileName, contentType);
+        return this.addMultipartFile(FILE, restMultipart);
+    }
+
+
+    /**
+     * Add the multipart upload file name for this request.
+     *
+     * @param multipartFileName
+     *            the multipart file name
+     * @param contentType
+     *            the multipart contentType
+     * @param charSet
+     *            the multipart charSet
+     * @return this request
+     */
+    public RestRequest addMultipartFileName(String multipartFileName, String contentType, String charSet ) {
+        RestMultipart restMultipart = new RestMultipart(multipartFileName, contentType, charSet);
+        return this.addMultipartFile(FILE, restMultipart);
+    }
+
+    /**
+     * Add the multipart upload file name for this request.
+     *
+     * @param multiParamName
+     *            the multipart file form parameter name
+     * @param restMultipart
+     *            the multipart restMultipart data
+     * @return this request
+     */
+    public RestRequest addMultipartFile(String multiParamName, RestMultipart restMultipart) {
+        multipartFileByParamName.put(multiParamName, restMultipart);
         return this;
     }
 
@@ -166,6 +247,7 @@ public class RestRequest extends RestData {
 
 	/**
 	 * @param escaped whether resource uri is % escaped or not
+     * @return this request
 	 */
 	public RestRequest setResourceUriEscaped(boolean escaped) {
 		this.resourceUriEscaped = escaped;

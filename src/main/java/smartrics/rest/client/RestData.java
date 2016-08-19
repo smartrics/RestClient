@@ -108,7 +108,7 @@ public abstract class RestData {
 	}
 
 	/**
-	 * @param body
+	 * @param rawBody
 	 *            the body
 	 * @return this RestData
 	 */

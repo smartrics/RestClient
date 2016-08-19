@@ -25,8 +25,12 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
@@ -156,9 +160,10 @@ public class RestClientImpl implements RestClient {
             if (fileName != null) {
                 requestEntity = configureFileUpload(fileName);
             } else {
-                fileName = request.getMultipartFileName();
-                if (fileName != null) {
-                    requestEntity = configureMultipartFileUpload(m, request, requestEntity, fileName);
+                // Add Multipart
+                Map<String,RestMultipart> multipartFiles = request.getMultipartFileNames();
+                if ((multipartFiles != null)&& (!multipartFiles.isEmpty()) )  {
+                    requestEntity = configureMultipartFileUpload(m, request, requestEntity, multipartFiles);
                 } else {
                     requestEntity = new RequestEntity() {
                         public boolean isRepeatable() {
@@ -192,14 +197,29 @@ public class RestClientImpl implements RestClient {
         	
     }
 
-    private RequestEntity configureMultipartFileUpload(HttpMethod m, final RestRequest request, RequestEntity requestEntity, String fileName) {
-        File file = new File(fileName);
+
+    private RequestEntity configureMultipartFileUpload(HttpMethod m, final RestRequest request, RequestEntity requestEntity, Map<String,RestMultipart> multipartFiles) {
+        MultipartRequestEntity multipartRequestEntity = null;
+        // Current File Name reading for tracking missing file
+        String fileName = null;
         try {
-            requestEntity = new MultipartRequestEntity(new Part[] { new FilePart(request.getMultipartFileParameterName(), file) }, ((EntityEnclosingMethod) m).getParams());
+            List<FilePart> fileParts = new ArrayList<FilePart>(multipartFiles.size());
+            // Read File Part
+            for (Map.Entry<String,RestMultipart> multipartFile : multipartFiles.entrySet()) {
+                RestMultipart restMultipart = multipartFile.getValue();
+                fileName = restMultipart.getFileName();
+                String fileParamName =  multipartFile.getKey();
+                LOG.info("Configure Multipart file upload paramName={} :  file={} ", fileParamName,  fileName);
+                File file = new File(fileName);
+                FilePart filePart = new FilePart(fileParamName, file, restMultipart.getContentType(), restMultipart.getCharset());
+                fileParts.add(filePart);
+            }
+            Part[] parts = fileParts.toArray(new Part[fileParts.size()]);
+            multipartRequestEntity = new MultipartRequestEntity(parts, ((EntityEnclosingMethod) m).getParams());
         } catch (FileNotFoundException e) {
             throw new IllegalArgumentException("File not found: " + fileName, e);
         }
-        return requestEntity;
+        return multipartRequestEntity;
     }
 
     private RequestEntity configureFileUpload(String fileName) {
