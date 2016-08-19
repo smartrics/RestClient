@@ -226,6 +226,7 @@ public class RestClientImpl implements RestClient {
                 }
             case STRING:
                 StringPart stringPart = new StringPart(fileParamName, restMultipart.getValue(), restMultipart.getCharset());
+                stringPart.setContentType(restMultipart.getContentType());
                 LOG.info("Configure Multipart String upload paramName={} :  ContentType={} ", fileParamName, stringPart.getContentType());
                 return stringPart;
             default:
