@@ -106,8 +106,8 @@ public class RestRequest extends RestData {
     public Map<String,RestMultipart> getMultipartFileNames() {
         // Add History Api
         if  ( (this.multipartFileName!=null) && (!this.multipartFileName.trim().isEmpty()) )  {
-            RestMultipart restMultipart = new RestMultipart(this.multipartFileName);
-            this.addMultipartFile(   this.multipartFileParameterName, restMultipart);
+            RestMultipart restMultipart = new RestMultipart(RestMultipart.RestMultipartType.FILE, this.multipartFileName);
+            this.addMultipart(   this.multipartFileParameterName, restMultipart);
         }
         // Return the Map
         return multipartFileByParamName;
@@ -156,8 +156,8 @@ public class RestRequest extends RestData {
      * @return this request
      */
     public RestRequest addMultipartFileName(String multipartFileName ) {
-        RestMultipart restMultipart = new RestMultipart(multipartFileName);
-        return this.addMultipartFile(FILE, restMultipart);
+        RestMultipart restMultipart = new RestMultipart(RestMultipart.RestMultipartType.FILE, multipartFileName);
+        return this.addMultipart(FILE, restMultipart);
     }
 
     /**
@@ -170,8 +170,8 @@ public class RestRequest extends RestData {
      * @return this request
      */
     public RestRequest addMultipartFileName(String multipartFileName, String contentType ) {
-        RestMultipart restMultipart = new RestMultipart(multipartFileName, contentType);
-        return this.addMultipartFile(FILE, restMultipart);
+        RestMultipart restMultipart = new RestMultipart(RestMultipart.RestMultipartType.FILE,multipartFileName, contentType);
+        return this.addMultipart(FILE, restMultipart);
     }
 
 
@@ -187,8 +187,8 @@ public class RestRequest extends RestData {
      * @return this request
      */
     public RestRequest addMultipartFileName(String multipartFileName, String contentType, String charSet ) {
-        RestMultipart restMultipart = new RestMultipart(multipartFileName, contentType, charSet);
-        return this.addMultipartFile(FILE, restMultipart);
+        RestMultipart restMultipart = new RestMultipart(RestMultipart.RestMultipartType.FILE, multipartFileName, contentType, charSet);
+        return this.addMultipart(FILE, restMultipart);
     }
 
     /**
@@ -200,7 +200,7 @@ public class RestRequest extends RestData {
      *            the multipart restMultipart data
      * @return this request
      */
-    public RestRequest addMultipartFile(String multiParamName, RestMultipart restMultipart) {
+    public RestRequest addMultipart(String multiParamName, RestMultipart restMultipart) {
         multipartFileByParamName.put(multiParamName, restMultipart);
         return this;
     }

@@ -5,20 +5,34 @@ package smartrics.rest.client;
  */
 public class RestMultipart {
 
-    private String fileName;
+    /**
+     * An http verb (those supported).
+     */
+    public enum RestMultipartType {
+        FILE, STRING
+    }
+
+    private RestMultipartType type;
+    private String value;
     private String contentType;
     private String charset;
 
-    public RestMultipart(String fileName) {
-        this(fileName, (String)null, (String)null);
+    /**
+     *
+     * @param type Type of the stringValue
+     * @param stringValue The String content or the file Path
+     */
+    public RestMultipart(RestMultipartType type, String stringValue) {
+        this(type, stringValue, (String)null, (String)null);
     }
 
-    public RestMultipart(String fileName, String contentType) {
-        this(fileName, contentType, (String)null);
+    public RestMultipart(RestMultipartType type,String stringValue, String contentType) {
+        this(type, stringValue, contentType, (String)null);
     }
 
-    public RestMultipart(String fileName, String contentType, String charset) {
-        this.fileName = fileName;
+    public RestMultipart(RestMultipartType type, String stringValue, String contentType, String charset) {
+        this.type = type;
+        this.value = stringValue;
         this.contentType = contentType;
         this.charset = charset;
     }
@@ -26,19 +40,19 @@ public class RestMultipart {
     /**
      * @return the upload file name for this request
      */
-    public String getFileName() {
-        return fileName;
+    public String getValue() {
+        return value;
     }
 
     /**
      * Sets the multipart upload file name for this request.
      *
-     * @param fileName
+     * @param value
      *            the multipart file name
      * @return this restMultipart
      */
-    public RestMultipart setFileName(String fileName) {
-        this.fileName = fileName;
+    public RestMultipart setValue(String value) {
+        this.value = value;
         return this;
     }
 
@@ -82,6 +96,14 @@ public class RestMultipart {
         return this;
     }
 
+    public RestMultipartType getType() {
+        return type;
+    }
+
+    public void setType(RestMultipartType type) {
+        this.type = type;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -89,15 +111,17 @@ public class RestMultipart {
 
         RestMultipart that = (RestMultipart) o;
 
-        if (!fileName.equals(that.fileName)) return false;
+        if (!value.equals(that.value)) return false;
         if (contentType != null ? !contentType.equals(that.contentType) : that.contentType != null) return false;
         return charset != null ? charset.equals(that.charset) : that.charset == null;
 
     }
 
+
+
     @Override
     public int hashCode() {
-        int result = fileName.hashCode();
+        int result = value.hashCode();
         result = 31 * result + (contentType != null ? contentType.hashCode() : 0);
         result = 31 * result + (charset != null ? charset.hashCode() : 0);
         return result;
@@ -107,7 +131,7 @@ public class RestMultipart {
     @Override
     public String toString() {
         return "RestMultipart{" +
-                "fileName='" + fileName + '\'' +
+                "value='" + value + '\'' +
                 ", contentType='" + contentType + '\'' +
                 ", charset='" + charset + '\'' +
                 '}';

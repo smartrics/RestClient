@@ -25,10 +25,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +42,7 @@ import org.apache.commons.httpclient.methods.RequestEntity;
 import org.apache.commons.httpclient.methods.multipart.FilePart;
 import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
 import org.apache.commons.httpclient.methods.multipart.Part;
+import org.apache.commons.httpclient.methods.multipart.StringPart;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,10 +60,9 @@ public class RestClientImpl implements RestClient {
     /**
      * Constructor allowing the injection of an {@code
      * org.apache.commons.httpclient.HttpClient}.
-     * 
-     * @param client
-     *            the client
-     * See {@link org.apache.commons.httpclient.HttpClient}
+     *
+     * @param client the client
+     *               See {@link org.apache.commons.httpclient.HttpClient}
      */
     public RestClientImpl(HttpClient client) {
         if (client == null)
@@ -88,7 +86,7 @@ public class RestClientImpl implements RestClient {
 
     /**
      * Returns the Http client instance used by this implementation.
-     * 
+     *
      * @return the instance of HttpClient
      * See {@link org.apache.commons.httpclient.HttpClient}
      * See {@link smartrics.rest.client.RestClientImpl#RestClientImpl(HttpClient)}
@@ -142,13 +140,10 @@ public class RestClientImpl implements RestClient {
     /**
      * Configures the instance of HttpMethod with the data in the request and
      * the host address.
-     * 
-     * @param m
-     *            the method class to configure
-     * @param hostAddr
-     *            the host address
-     * @param request
-     *            the rest request
+     *
+     * @param m        the method class to configure
+     * @param hostAddr the host address
+     * @param request  the rest request
      */
     protected void configureHttpMethod(HttpMethod m, String hostAddr, final RestRequest request) {
         addHeaders(m, request);
@@ -161,8 +156,8 @@ public class RestClientImpl implements RestClient {
                 requestEntity = configureFileUpload(fileName);
             } else {
                 // Add Multipart
-                Map<String,RestMultipart> multipartFiles = request.getMultipartFileNames();
-                if ((multipartFiles != null)&& (!multipartFiles.isEmpty()) )  {
+                Map<String, RestMultipart> multipartFiles = request.getMultipartFileNames();
+                if ((multipartFiles != null) && (!multipartFiles.isEmpty())) {
                     requestEntity = configureMultipartFileUpload(m, request, requestEntity, multipartFiles);
                 } else {
                     requestEntity = new RequestEntity() {
@@ -194,33 +189,52 @@ public class RestClientImpl implements RestClient {
         } else {
             m.setFollowRedirects(request.isFollowRedirect());
         }
-        	
+
     }
 
 
-    private RequestEntity configureMultipartFileUpload(HttpMethod m, final RestRequest request, RequestEntity requestEntity, Map<String,RestMultipart> multipartFiles) {
+    private RequestEntity configureMultipartFileUpload(HttpMethod m, final RestRequest request, RequestEntity requestEntity, Map<String, RestMultipart> multipartFiles) {
         MultipartRequestEntity multipartRequestEntity = null;
         // Current File Name reading for tracking missing file
         String fileName = null;
-        try {
-            List<FilePart> fileParts = new ArrayList<FilePart>(multipartFiles.size());
-            // Read File Part
-            for (Map.Entry<String,RestMultipart> multipartFile : multipartFiles.entrySet()) {
-                RestMultipart restMultipart = multipartFile.getValue();
-                fileName = restMultipart.getFileName();
-                String fileParamName =  multipartFile.getKey();
-                LOG.info("Configure Multipart file upload paramName={} :  file={} ", fileParamName,  fileName);
-                File file = new File(fileName);
-                FilePart filePart = new FilePart(fileParamName, file, restMultipart.getContentType(), restMultipart.getCharset());
-                fileParts.add(filePart);
-            }
-            Part[] parts = fileParts.toArray(new Part[fileParts.size()]);
-            multipartRequestEntity = new MultipartRequestEntity(parts, ((EntityEnclosingMethod) m).getParams());
-        } catch (FileNotFoundException e) {
-            throw new IllegalArgumentException("File not found: " + fileName, e);
+
+        List<Part> fileParts = new ArrayList<Part>(multipartFiles.size());
+        // Read File Part
+        for (Map.Entry<String, RestMultipart> multipartFile : multipartFiles.entrySet()) {
+            Part filePart = createMultipart(multipartFile.getKey(), multipartFile.getValue());
+            fileParts.add(filePart);
         }
+        Part[] parts = fileParts.toArray(new Part[fileParts.size()]);
+        multipartRequestEntity = new MultipartRequestEntity(parts, ((EntityEnclosingMethod) m).getParams());
+
         return multipartRequestEntity;
     }
+
+    private Part createMultipart(String fileParamName, RestMultipart restMultipart) {
+        RestMultipart.RestMultipartType type = restMultipart.getType();
+        switch (type) {
+            case FILE:
+                String fileName = null;
+                try {
+                    fileName = restMultipart.getValue();
+                    File file = new File(fileName);
+                    LOG.info("Configure Multipart file upload paramName={} :  file={} ", fileParamName, fileName);
+                    FilePart filePart = new FilePart(fileParamName, file, restMultipart.getContentType(), restMultipart.getCharset());
+                    return filePart;
+                } catch (FileNotFoundException e) {
+                    throw new IllegalArgumentException("File not found: " + fileName, e);
+                }
+            case STRING:
+                StringPart stringPart = new StringPart(fileParamName, restMultipart.getValue(), restMultipart.getCharset());
+                LOG.info("Configure Multipart String upload paramName={} :  ContentType={} ", fileParamName, stringPart.getContentType());
+                return stringPart;
+            default:
+                throw new IllegalArgumentException("Unknonw Multipart Type : " + type);
+        }
+
+    }
+
+
 
     private RequestEntity configureFileUpload(String fileName) {
         final File file = new File(fileName);
@@ -262,9 +276,8 @@ public class RestClientImpl implements RestClient {
      * implementation class in Apache HttpClient. Currently the name is mapped
      * to <code>org.apache.commons.httpclient.methods.%sMethod</code> where
      * <code>%s</code> is the parameter mName.
-     * 
-     * @param mName
-     *            the method name
+     *
+     * @param mName the method name
      * @return the method class
      */
     protected String getMethodClassnameFromMethodName(String mName) {
@@ -274,11 +287,10 @@ public class RestClientImpl implements RestClient {
     /**
      * Utility method that creates an instance of {@code
      * org.apache.commons.httpclient.HttpMethod}.
-     * 
-     * @param request
-     *            the rest request
+     *
+     * @param request the rest request
      * @return the instance of {@code org.apache.commons.httpclient.HttpMethod}
-     *         matching the method in RestRequest.
+     * matching the method in RestRequest.
      */
     @SuppressWarnings("unchecked")
     protected HttpMethod createHttpClientMethod(RestRequest request) {
@@ -286,10 +298,10 @@ public class RestClientImpl implements RestClient {
         String className = getMethodClassnameFromMethodName(mName);
         try {
             Class<HttpMethod> clazz = (Class<HttpMethod>) Class.forName(className);
-            if(className.endsWith("TraceMethod")) {
-            	return clazz.getConstructor(String.class).newInstance("http://dummy.com");
+            if (className.endsWith("TraceMethod")) {
+                return clazz.getConstructor(String.class).newInstance("http://dummy.com");
             } else {
-            	return clazz.newInstance();
+                return clazz.newInstance();
             }
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException(className + " not found: you may be using a too old or " + "too new version of HttpClient", e);
@@ -299,11 +311,11 @@ public class RestClientImpl implements RestClient {
             throw new IllegalStateException("The default ctor for type " + className + " cannot be accessed", e);
         } catch (RuntimeException e) {
             throw new IllegalStateException("Exception when instantiating: " + className, e);
-		} catch (InvocationTargetException e) {
+        } catch (InvocationTargetException e) {
             throw new IllegalStateException("The ctor with String.class arg for type " + className + " cannot be invoked", e);
-		} catch (NoSuchMethodException e) {
+        } catch (NoSuchMethodException e) {
             throw new IllegalStateException("The ctor with String.class arg for type " + className + " doesn't exist", e);
-		}
+        }
     }
 
     private void addHeaders(HttpMethod m, RestRequest request) {
