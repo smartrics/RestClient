@@ -218,8 +218,8 @@ public class RestClientImpl implements RestClient {
                 try {
                     fileName = restMultipart.getValue();
                     File file = new File(fileName);
-                    LOG.info("Configure Multipart file upload paramName={} :  file={} ", fileParamName, fileName);
                     FilePart filePart = new FilePart(fileParamName, file, restMultipart.getContentType(), restMultipart.getCharset());
+                    LOG.info("Configure Multipart file upload paramName={} :  ContentType={} for  file={} ", new String[]{ fileParamName,  restMultipart.getContentType(), fileName});
                     return filePart;
                 } catch (FileNotFoundException e) {
                     throw new IllegalArgumentException("File not found: " + fileName, e);
