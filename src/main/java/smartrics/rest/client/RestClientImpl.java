@@ -20,13 +20,10 @@
  */
 package smartrics.rest.client;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
@@ -113,6 +110,28 @@ public class RestClientImpl implements RestClient {
         LOG.debug("request: {}", request);
         HttpMethod m = createHttpClientMethod(request);
         configureHttpMethod(m, hostAddr, request);
+        // Debug Client
+        if (LOG.isDebugEnabled()) {
+            try {
+                LOG.info("Http Request URI : {}", m.getURI());
+            } catch (URIException e) {
+                LOG.error("Error URIException in debug : " + e.getMessage(), e);
+            }
+            // Request Header
+            LOG.debug("Http Request Method Class : {} ",    m.getClass()  );
+            LOG.debug("Http Request Header : {} ",    Arrays.toString( m.getRequestHeaders()) );
+            // Request Body
+            if (m instanceof EntityEnclosingMethod) {
+                try {
+                    ByteArrayOutputStream requestOut = new ByteArrayOutputStream();
+                    ((EntityEnclosingMethod) m).getRequestEntity().writeRequest(requestOut);
+                    LOG.debug("Http Request Body : {}", requestOut.toString());
+                } catch (IOException e) {
+                    LOG.error("Error in reading request body in debug : " + e.getMessage(), e);
+                }
+            }
+        }
+        // Prepare Response
         RestResponse resp = new RestResponse();
         resp.setTransactionId(request.getTransactionId());
         resp.setResource(request.getResource());
@@ -124,6 +143,14 @@ public class RestClientImpl implements RestClient {
             resp.setStatusCode(m.getStatusCode());
             resp.setStatusText(m.getStatusText());
             resp.setRawBody(m.getResponseBody());
+            // Debug
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Http Request Path : {}", m.getPath());
+                LOG.debug("Http Request Header : {} ", Arrays.toString( m.getRequestHeaders()) );
+                LOG.debug("Http Response Status : {}", m.getStatusLine() );
+                LOG.debug("Http Response Body : {}", m.getResponseBodyAsString() );
+            }
+
         } catch (HttpException e) {
             String message = "Http call failed for protocol failure";
             throw new IllegalStateException(message, e);
