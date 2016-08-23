@@ -20,22 +20,27 @@
  */
 package smartrics.rest.client;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import java.io.*;
+import java.util.Arrays;
 
-import java.io.File;
-import java.io.IOException;
-
+import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
 import org.apache.commons.httpclient.HttpMethod;
+import org.hamcrest.CoreMatchers;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import smartrics.rest.client.RestRequest.Method;
 
+import static org.junit.Assert.*;
+
 public class RestClientTest {
+
+    private static Logger LOG = LoggerFactory.getLogger(RestClientTest.class);
 
     private MockHttpMethod mockHttpMethod;
 
@@ -232,7 +237,64 @@ public class RestClientTest {
         validRestRequest.setMultipartFileName(f.getAbsolutePath());
         RestClientImpl client = new RestClientImpl(new MockHttpClient(200));
         client.configureHttpMethod(mockHttpMethod, "localhost", validRestRequest);
-        // Could not be the same as mock :  assertTrue(mockHttpMethod.isMultipartRequest());
+        assertTrue(mockHttpMethod.isMultipartRequest());
+    }
+
+
+    @Test
+    public void shouldCreateMultipartEntityIfRestRequestHasNonEmptyMultiparts() throws Exception {
+        String filename1 = "multiparttest-file1";
+        File file1 = File.createTempFile(filename1, null);
+        file1.deleteOnExit();
+        PrintWriter writer1 = new PrintWriter(file1);
+        writer1.println("File1_Content");
+        writer1.close();
+
+        String filename2 = "multiparttest-file2";
+        File file2 = File.createTempFile(filename2, null);
+        file1.deleteOnExit();
+        PrintWriter writer2 = new PrintWriter(file2);
+        writer2.println("File2_Content");
+        writer2.close();
+
+        String json1 = " {\"lastname\":\"Boby\",\"firstname\":\"Bob\"}";
+
+
+        mockHttpMethod = new MockHttpMethod("mock");
+        validRestRequest.addHeader("a", "header");
+        validRestRequest.addMultipart("file1", new RestMultipart(RestMultipart.RestMultipartType.FILE, file1.getAbsolutePath()));
+        validRestRequest.addMultipart("file2", new RestMultipart(RestMultipart.RestMultipartType.FILE, file2.getAbsolutePath(), "application/octet-stream"));
+        validRestRequest.addMultipart("json1", new RestMultipart(RestMultipart.RestMultipartType.STRING, json1, "application/json"));
+
+        RestClientImpl client = new RestClientImpl(new MockHttpClient(200));
+        client.configureHttpMethod(mockHttpMethod, "localhost", validRestRequest);
+        assertTrue(mockHttpMethod.isMultipartRequest());
+        Header[] headers = mockHttpMethod.getRequestHeaders();
+        // Test Request Entity
+        assertNotNull(mockHttpMethod.getRequestEntity());
+        assertTrue( mockHttpMethod.getRequestEntity().getContentType().startsWith("multipart/form-data; boundary="));
+        String boundary =  mockHttpMethod.getRequestEntity().getContentType().substring("multipart/form-data; boundary=".length());
+        LOG.debug("Request boundary = {}" ,  boundary );
+        // Test Request Body
+        ByteArrayOutputStream requestOut = new ByteArrayOutputStream();
+        mockHttpMethod.getRequestEntity().writeRequest(requestOut);
+            String requestBodyAsString = requestOut.toString();
+        //System.err.println("-------- " +  requestBodyAsString );
+        LOG.debug("requestBodyAsString = {}", requestBodyAsString);
+        // Request Body Assert Params
+        assertTrue(requestBodyAsString.contains("name=\"file1\""));
+        assertTrue(requestBodyAsString.contains("name=\"file2\""));
+        assertTrue(requestBodyAsString.contains("name=\"json1\""));
+        // Request Body Assert Contents
+        assertTrue(requestBodyAsString.contains("File1_Content"));
+        assertTrue(requestBodyAsString.contains("File2_Content"));
+        assertTrue(requestBodyAsString.contains("Boby"));
+        // Test boundary body
+        String[] bodySplit = requestBodyAsString.split("--" + boundary);
+        assertEquals(5, bodySplit.length);
+        LOG.debug("-------- Split Idx 1" +  bodySplit[1] );
+        LOG.debug("-------- Split Idx 2" +  bodySplit[2] );
+        LOG.debug("-------- Split Idx 3" +  bodySplit[3] );
     }
 
     @Test
