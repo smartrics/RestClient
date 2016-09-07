@@ -6,20 +6,13 @@ specifically geared to operate REST resources.
 
 Maven dependency
 ----------------
+From [Maven Central](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22smartrics-RestClient%22)
+
 	<dependency>
 		<groupId>smartrics.restfixture</groupId>
 		<artifactId>smartrics-RestClient</artifactId>
-		<version>2.0</version>
+		<version>{smartrics.restclient.version}</version>
 	</dependency>
-
-Links
------
-
-*Release*: https://oss.sonatype.org/content/repositories/releases/smartrics/restfixture/smartrics-RestClient/
-
-*Continuous Integration*: http://jenkins.fazend.com:8080/job/RestClient
-
-*Maven Site*: http://jenkins.fazend.com:8080/job/RestClient/site/index.html
 
 Getting started
 ---------------
