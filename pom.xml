@@ -16,7 +16,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>smartrics.restfixture</groupId>
     <artifactId>smartrics-RestClient</artifactId>
-    <version>2.2</version>
+    <version>2.3-SNAPSHOT</version>
     <name>RestClient</name>
     <url>https://github.com/smartrics/RestClient</url>
     <description>A simple rest client, used by the RestFixture</description>
@@ -130,7 +130,7 @@
                 <version>1.4</version>
                 <configuration>
                     <!-- comment this to skip sign during install -->
-                    <!--<skip>true</skip>-->
+                    <skip>true</skip>
                 </configuration>
                 <executions>
                     <execution>
