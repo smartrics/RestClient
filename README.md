@@ -19,12 +19,15 @@ Getting started
 
 The current implementation of '''RestClient''' wraps Apache HttpClient 3.1.
 
-	org.apache.commons.httpclient.HttpClient = new org.apache.commons.httpclient.HttpClient();
-	RestClient client = new RestClientImpl(httpClient);
-	client.setBaseUrl("http://mydomain.com:8080/orders");
-	RestRequest request = new RestRequest().setMethod(RestRequest.Method.Get).setResource("/resource");
-	RestResponse response = client.execute(request);
-	String body = response.getBody();
-	Header h = response.getHeader("Content-Type");
-	// ...
-	
+```java
+    org.apache.commons.httpclient.HttpClient = new org.apache.commons.httpclient.HttpClient();
+    RestClient client = new RestClientImpl(httpClient);
+    client.setBaseUrl("http://mydomain.com:8080/orders");
+    RestRequest request = new RestRequest().setMethod(RestRequest.Method.Get).setResource("/resource");
+    RestResponse response = client.execute(request);
+    String body = response.getBody();
+    Header h = response.getHeader("Content-Type");
+    // ...
+```
+
+That's it folks!
