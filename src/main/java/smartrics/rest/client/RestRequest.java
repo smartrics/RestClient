@@ -32,7 +32,7 @@ public class RestRequest extends RestData {
      * An http verb (those supported).
      */
     public enum Method {
-        Get, Post, Put, Delete, Head, Options, Trace
+        Get, Post, Put, Delete, Head, Options, Trace, Patch
     }
 
     private static final String FILE = "file";

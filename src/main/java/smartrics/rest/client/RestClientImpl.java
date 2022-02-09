@@ -22,11 +22,13 @@ package smartrics.rest.client;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+/*
 import org.apache.commons.httpclient.Header;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.HttpException;
@@ -40,8 +42,28 @@ import org.apache.commons.httpclient.methods.multipart.FilePart;
 import org.apache.commons.httpclient.methods.multipart.MultipartRequestEntity;
 import org.apache.commons.httpclient.methods.multipart.Part;
 import org.apache.commons.httpclient.methods.multipart.StringPart;
+*/
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpException;
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.BasicHttpEntity;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.FileEntity;
+import org.apache.http.entity.mime.HttpMultipartMode;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
+import org.apache.http.entity.mime.content.ContentBody;
+import org.apache.http.entity.mime.content.FileBody;
+import org.apache.http.entity.mime.content.StringBody;
+import org.apache.http.message.BasicHeader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.print.URIException;
 
 /**
  * A generic REST client based on {@code HttpClient}.
@@ -59,7 +81,7 @@ public class RestClientImpl implements RestClient {
      * org.apache.commons.httpclient.HttpClient}.
      *
      * @param client the client
-     *               See {@link org.apache.commons.httpclient.HttpClient}
+     *               See {@link HttpClient}
      */
     public RestClientImpl(HttpClient client) {
         if (client == null)
@@ -85,7 +107,7 @@ public class RestClientImpl implements RestClient {
      * Returns the Http client instance used by this implementation.
      *
      * @return the instance of HttpClient
-     * See {@link org.apache.commons.httpclient.HttpClient}
+     * See {@link HttpClient}
      * See {@link smartrics.rest.client.RestClientImpl#RestClientImpl(HttpClient)}
      */
     public HttpClient getClient() {
@@ -108,23 +130,19 @@ public class RestClientImpl implements RestClient {
         if (request.getTransactionId() == null)
             request.setTransactionId(Long.valueOf(System.currentTimeMillis()));
         LOG.debug("request: {}", request);
-        HttpMethod m = createHttpClientMethod(request);
-        configureHttpMethod(m, hostAddr, request);
+        HttpRequestBase method = createHttpClientMethod(request);
+        configureHttpMethod(method, hostAddr, request);
         // Debug Client
         if (LOG.isDebugEnabled()) {
-            try {
-                LOG.info("Http Request URI : {}", m.getURI());
-            } catch (URIException e) {
-                LOG.error("Error URIException in debug : " + e.getMessage(), e);
-            }
+            LOG.info("Http Request URI : {}", method.getURI());
             // Request Header
-            LOG.debug("Http Request Method Class : {} ",    m.getClass()  );
-            LOG.debug("Http Request Header : {} ",    Arrays.toString( m.getRequestHeaders()) );
+            LOG.debug("Http Request Method Class : {} ",    method.getClass()  );
+            LOG.debug("Http Request Header : {} ",    Arrays.toString( method.getAllHeaders()) );
             // Request Body
-            if (m instanceof EntityEnclosingMethod) {
+            if (method instanceof HttpEntityEnclosingRequestBase) {
                 try {
                     ByteArrayOutputStream requestOut = new ByteArrayOutputStream();
-                    ((EntityEnclosingMethod) m).getRequestEntity().writeRequest(requestOut);
+                    ((HttpEntityEnclosingRequestBase) method).getEntity().writeTo(requestOut);
                     LOG.debug("Http Request Body : {}", requestOut.toString());
                 } catch (IOException e) {
                     LOG.error("Error in reading request body in debug : " + e.getMessage(), e);
@@ -136,29 +154,30 @@ public class RestClientImpl implements RestClient {
         resp.setTransactionId(request.getTransactionId());
         resp.setResource(request.getResource());
         try {
-            client.executeMethod(m);
-            for (Header h : m.getResponseHeaders()) {
+            HttpResponse response = client.execute(method);
+            for (Header h : response.getAllHeaders()) {
                 resp.addHeader(h.getName(), h.getValue());
             }
-            resp.setStatusCode(m.getStatusCode());
-            resp.setStatusText(m.getStatusText());
-            resp.setRawBody(m.getResponseBody());
+            resp.setStatusCode(response.getStatusLine().getStatusCode());
+            resp.setStatusText(response.getStatusLine().toString());
+            int nRead;
+            byte[] bytes = new byte[4];
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            response.getEntity().writeTo(buffer);
+            resp.setRawBody(buffer.toByteArray());
             // Debug
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Http Request Path : {}", m.getPath());
-                LOG.debug("Http Request Header : {} ", Arrays.toString( m.getRequestHeaders()) );
-                LOG.debug("Http Response Status : {}", m.getStatusLine() );
-                LOG.debug("Http Response Body : {}", m.getResponseBodyAsString() );
+                LOG.debug("Http Request Path : {}", method.toString());
+                LOG.debug("Http Request Header : {} ", Arrays.toString( method.getAllHeaders()) );
+                LOG.debug("Http Response Status : {}", response.getStatusLine() );
+                LOG.debug("Http Response Body : {}", new String(resp.getRawBody()));
             }
 
-        } catch (HttpException e) {
-            String message = "Http call failed for protocol failure";
-            throw new IllegalStateException(message, e);
         } catch (IOException e) {
             String message = "Http call failed for IO failure";
             throw new IllegalStateException(message, e);
         } finally {
-            m.releaseConnection();
+            method.releaseConnection();
         }
         LOG.debug("response: {}", resp);
         return resp;
@@ -168,16 +187,15 @@ public class RestClientImpl implements RestClient {
      * Configures the instance of HttpMethod with the data in the request and
      * the host address.
      *
-     * @param m        the method class to configure
+     * @param method        the method class to configure
      * @param hostAddr the host address
      * @param request  the rest request
      */
-    protected void configureHttpMethod(HttpMethod m, String hostAddr, final RestRequest request) {
-        addHeaders(m, request);
-        setUri(m, hostAddr, request);
-        m.setQueryString(request.getQuery());
-        if (m instanceof EntityEnclosingMethod) {
-            RequestEntity requestEntity = null;
+    protected void configureHttpMethod(HttpRequestBase method, String hostAddr, final RestRequest request) {
+        addHeaders(method, request);
+        setUri(method, hostAddr, request);
+        if (method instanceof HttpEntityEnclosingRequestBase) {
+            HttpEntity requestEntity = null;
             String fileName = request.getFileName();
             if (fileName != null) {
                 requestEntity = configureFileUpload(fileName);
@@ -185,75 +203,59 @@ public class RestClientImpl implements RestClient {
                 // Add Multipart
                 Map<String, RestMultipart> multipartFiles = request.getMultipartFileNames();
                 if ((multipartFiles != null) && (!multipartFiles.isEmpty())) {
-                    requestEntity = configureMultipartFileUpload(m, request, requestEntity, multipartFiles);
+                    requestEntity = configureMultipartFileUpload(method, request, requestEntity, multipartFiles);
                 } else {
-                    requestEntity = new RequestEntity() {
-                        public boolean isRepeatable() {
-                            return true;
-                        }
-
-                        public void writeRequest(OutputStream out) throws IOException {
-                            PrintWriter printer = new PrintWriter(out);
-                            printer.print(request.getBody());
-                            printer.flush();
-                        }
-
-                        public long getContentLength() {
-                            return request.getBody().getBytes().length;
-                        }
-
-                        public String getContentType() {
+                    requestEntity = new BasicHttpEntity() {
+                        @Override
+                        public Header getContentType() {
                             List<smartrics.rest.client.RestData.Header> values = request.getHeader("Content-Type");
                             String v = "text/xml";
                             if (values.size() != 0)
                                 v = values.get(0).getValue();
-                            return v;
+                            Header header = new BasicHeader("Content-Type", v);
+                            return header;
                         }
                     };
+                    ((BasicHttpEntity) requestEntity).setContent(new ByteArrayInputStream(request.getBody().getBytes()));
                 }
             }
-            ((EntityEnclosingMethod) m).setRequestEntity(requestEntity);
+            ((HttpEntityEnclosingRequestBase) method).setEntity(requestEntity);
         } else {
-            m.setFollowRedirects(request.isFollowRedirect());
+            //TODO what about redirects
+            //method.setFollowRedirects(request.isFollowRedirect());
         }
 
     }
 
 
-    private RequestEntity configureMultipartFileUpload(HttpMethod m, final RestRequest request, RequestEntity requestEntity, Map<String, RestMultipart> multipartFiles) {
-        MultipartRequestEntity multipartRequestEntity = null;
+    private HttpEntity configureMultipartFileUpload(HttpRequestBase m, final RestRequest request, HttpEntity requestEntity, Map<String, RestMultipart> multipartFiles) {
+        MultipartEntityBuilder builder = MultipartEntityBuilder.create();
+        builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
         // Current File Name reading for tracking missing file
         String fileName = null;
 
-        List<Part> fileParts = new ArrayList<Part>(multipartFiles.size());
         // Read File Part
         for (Map.Entry<String, RestMultipart> multipartFile : multipartFiles.entrySet()) {
-            Part filePart = createMultipart(multipartFile.getKey(), multipartFile.getValue());
-            fileParts.add(filePart);
+            ContentBody filePart = createMultipart(multipartFile.getKey(), multipartFile.getValue());
+            builder.addPart(multipartFile.getKey(), filePart);
         }
-        Part[] parts = fileParts.toArray(new Part[fileParts.size()]);
-        multipartRequestEntity = new MultipartRequestEntity(parts, ((EntityEnclosingMethod) m).getParams());
-
-        return multipartRequestEntity;
+        return builder.build();
     }
 
-    private Part createMultipart(String fileParamName, RestMultipart restMultipart) {
+    private ContentBody createMultipart(String fileParamName, RestMultipart restMultipart) {
         RestMultipart.RestMultipartType type = restMultipart.getType();
         switch (type) {
             case FILE:
                 String fileName = null;
-                try {
-                    fileName = restMultipart.getValue();
-                    File file = new File(fileName);
-                    FilePart filePart = new FilePart(fileParamName, file, restMultipart.getContentType(), restMultipart.getCharset());
-                    LOG.info("Configure Multipart file upload paramName={} :  ContentType={} for  file={} ", new String[]{ fileParamName,  restMultipart.getContentType(), fileName});
-                    return filePart;
-                } catch (FileNotFoundException e) {
-                    throw new IllegalArgumentException("File not found: " + fileName, e);
-                }
+                fileName = restMultipart.getValue();
+                File file = new File(fileName);
+                FileBody fileBody = new FileBody(file); //TODO what about content type
+                //FilePart filePart = new FilePart(fileParamName, file, restMultipart.getContentType(), restMultipart.getCharset());
+                LOG.info("Configure Multipart file upload paramName={} :  ContentType={} for  file={} ", new String[]{ fileParamName,  restMultipart.getContentType(), fileName});
+                return fileBody;
             case STRING:
-                StringPart stringPart = new StringPart(fileParamName, restMultipart.getValue(), restMultipart.getCharset());
-                stringPart.setContentType(restMultipart.getContentType());
+                StringBody stringPart = new StringBody(restMultipart.getValue(), ContentType.MULTIPART_FORM_DATA);
+                //stringPart.setContentType(restMultipart.getContentType()); TODO whata about content type
                 LOG.info("Configure Multipart String upload paramName={} :  ContentType={} ", fileParamName, stringPart.getContentType());
                 return stringPart;
             default:
@@ -264,39 +266,33 @@ public class RestClientImpl implements RestClient {
 
 
 
-    private RequestEntity configureFileUpload(String fileName) {
+    private HttpEntity configureFileUpload(String fileName) {
         final File file = new File(fileName);
         if (!file.exists()) {
             throw new IllegalArgumentException("File not found: " + fileName);
         }
-        return new FileRequestEntity(file, "application/octet-stream");
+        return new FileEntity(file); //TODO what about the content type
     }
 
-    public String getContentType(RestRequest request) {
-        List<smartrics.rest.client.RestData.Header> values = request.getHeader("Content-Type");
-        String v = "text/xml";
-        if (values.size() != 0)
-            v = values.get(0).getValue();
-        return v;
-    }
-
-    private void setUri(HttpMethod m, String hostAddr, RestRequest request) {
-        String host = hostAddr == null ? client.getHostConfiguration().getHost() : hostAddr;
-        if (host == null)
+    private void setUri(HttpRequestBase m, String hostAddr, RestRequest request) {
+        //TODO what about gethostconfiguration
+        //String host = hostAddr == null ? client.getHostConfiguration().getHost() : hostAddr;
+        String host = hostAddr;
+        if (host == null) {
             throw new IllegalStateException("hostAddress is null: please config httpClient host configuration or " + "pass a valid host address or config a baseUrl on this client");
+        }
         String uriString = host + request.getResource();
         boolean escaped = request.isResourceUriEscaped();
         try {
-            m.setURI(createUri(uriString, escaped));
-        } catch (URIException e) {
+            URIBuilder builder = new URIBuilder(host);
+            builder.setHost(host);
+            builder.setQuery(request.getQuery());
+            builder.setPath(request.getResource());
+        } catch (URISyntaxException e) {
             throw new IllegalStateException("Problem when building URI: " + uriString, e);
         } catch (NullPointerException e) {
             throw new IllegalStateException("Building URI with null string", e);
         }
-    }
-
-    protected URI createUri(String uriString, boolean escaped) throws URIException {
-        return new URI(uriString, escaped);
     }
 
     /**
@@ -309,7 +305,8 @@ public class RestClientImpl implements RestClient {
      * @return the method class
      */
     protected String getMethodClassnameFromMethodName(String mName) {
-        return String.format("org.apache.commons.httpclient.methods.%sMethod", mName);
+        //TODO fix this for new http client
+        return String.format("org.apache.http.client.methods.Http%s", mName);
     }
 
     /**
@@ -321,16 +318,12 @@ public class RestClientImpl implements RestClient {
      * matching the method in RestRequest.
      */
     @SuppressWarnings("unchecked")
-    protected HttpMethod createHttpClientMethod(RestRequest request) {
+    protected HttpRequestBase createHttpClientMethod(RestRequest request) {
         String mName = request.getMethod().toString();
         String className = getMethodClassnameFromMethodName(mName);
         try {
-            Class<HttpMethod> clazz = (Class<HttpMethod>) Class.forName(className);
-            if (className.endsWith("TraceMethod")) {
-                return clazz.getConstructor(String.class).newInstance("http://dummy.com");
-            } else {
-                return clazz.newInstance();
-            }
+            Class<HttpRequestBase> clazz = (Class<HttpRequestBase>) Class.forName(className);
+            return clazz.newInstance();
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException(className + " not found: you may be using a too old or " + "too new version of HttpClient", e);
         } catch (InstantiationException e) {
@@ -339,16 +332,12 @@ public class RestClientImpl implements RestClient {
             throw new IllegalStateException("The default ctor for type " + className + " cannot be accessed", e);
         } catch (RuntimeException e) {
             throw new IllegalStateException("Exception when instantiating: " + className, e);
-        } catch (InvocationTargetException e) {
-            throw new IllegalStateException("The ctor with String.class arg for type " + className + " cannot be invoked", e);
-        } catch (NoSuchMethodException e) {
-            throw new IllegalStateException("The ctor with String.class arg for type " + className + " doesn't exist", e);
         }
     }
 
-    private void addHeaders(HttpMethod m, RestRequest request) {
+    private void addHeaders(HttpRequestBase method, RestRequest request) {
         for (RestData.Header h : request.getHeaders()) {
-            m.addRequestHeader(h.getName(), h.getValue());
+            method.addHeader(h.getName(), h.getValue());
         }
     }
 }
