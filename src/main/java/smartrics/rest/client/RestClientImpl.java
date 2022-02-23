@@ -22,7 +22,11 @@ package smartrics.rest.client;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLDecoder;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -52,6 +56,7 @@ import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.BasicHttpEntity;
+import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.FileEntity;
 import org.apache.http.entity.mime.HttpMultipartMode;
@@ -70,7 +75,7 @@ import javax.print.URIException;
  */
 public class RestClientImpl implements RestClient {
 
-    private static Logger LOG = LoggerFactory.getLogger(RestClientImpl.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RestClientImpl.class);
 
     private final HttpClient client;
 
@@ -128,22 +133,22 @@ public class RestClientImpl implements RestClient {
         if (request == null || !request.isValid())
             throw new IllegalArgumentException("Invalid request " + request);
         if (request.getTransactionId() == null)
-            request.setTransactionId(Long.valueOf(System.currentTimeMillis()));
-        LOG.debug("request: {}", request);
+            request.setTransactionId(System.currentTimeMillis());
+        LOG.info("request: {}", request);
         HttpRequestBase method = createHttpClientMethod(request);
         configureHttpMethod(method, hostAddr, request);
         // Debug Client
-        if (LOG.isDebugEnabled()) {
+        if (LOG.isInfoEnabled()) {
             LOG.info("Http Request URI : {}", method.getURI());
             // Request Header
-            LOG.debug("Http Request Method Class : {} ",    method.getClass()  );
-            LOG.debug("Http Request Header : {} ",    Arrays.toString( method.getAllHeaders()) );
+            LOG.info("Http Request Method Class : {} ",    method.getClass()  );
+            LOG.info("Http Request Header : {} ",    Arrays.toString( method.getAllHeaders()) );
             // Request Body
             if (method instanceof HttpEntityEnclosingRequestBase) {
                 try {
                     ByteArrayOutputStream requestOut = new ByteArrayOutputStream();
                     ((HttpEntityEnclosingRequestBase) method).getEntity().writeTo(requestOut);
-                    LOG.debug("Http Request Body : {}", requestOut.toString());
+                    LOG.info("Http Request Body : {}", requestOut);
                 } catch (IOException e) {
                     LOG.error("Error in reading request body in debug : " + e.getMessage(), e);
                 }
@@ -205,18 +210,16 @@ public class RestClientImpl implements RestClient {
                 if ((multipartFiles != null) && (!multipartFiles.isEmpty())) {
                     requestEntity = configureMultipartFileUpload(method, request, requestEntity, multipartFiles);
                 } else {
-                    requestEntity = new BasicHttpEntity() {
+                    requestEntity = new ByteArrayEntity(request.getBody().getBytes()) {
                         @Override
                         public Header getContentType() {
                             List<smartrics.rest.client.RestData.Header> values = request.getHeader("Content-Type");
                             String v = "text/xml";
                             if (values.size() != 0)
                                 v = values.get(0).getValue();
-                            Header header = new BasicHeader("Content-Type", v);
-                            return header;
+                            return new BasicHeader("Content-Type", v);
                         }
                     };
-                    ((BasicHttpEntity) requestEntity).setContent(new ByteArrayInputStream(request.getBody().getBytes()));
                 }
             }
             ((HttpEntityEnclosingRequestBase) method).setEntity(requestEntity);
@@ -246,7 +249,7 @@ public class RestClientImpl implements RestClient {
         RestMultipart.RestMultipartType type = restMultipart.getType();
         switch (type) {
             case FILE:
-                String fileName = null;
+                String fileName;
                 fileName = restMultipart.getValue();
                 File file = new File(fileName);
                 FileBody fileBody = new FileBody(file); //TODO what about content type
@@ -277,17 +280,15 @@ public class RestClientImpl implements RestClient {
     private void setUri(HttpRequestBase m, String hostAddr, RestRequest request) {
         //TODO what about gethostconfiguration
         //String host = hostAddr == null ? client.getHostConfiguration().getHost() : hostAddr;
-        String host = hostAddr;
-        if (host == null) {
+        if (hostAddr == null) {
             throw new IllegalStateException("hostAddress is null: please config httpClient host configuration or " + "pass a valid host address or config a baseUrl on this client");
         }
-        String uriString = host + request.getResource();
+        String uriString = hostAddr + request.getResource();
         boolean escaped = request.isResourceUriEscaped();
         try {
-            URIBuilder builder = new URIBuilder(host);
-            builder.setHost(host);
+            URIBuilder builder = new URIBuilder(uriString);
             builder.setQuery(request.getQuery());
-            builder.setPath(request.getResource());
+            m.setURI(builder.build());
         } catch (URISyntaxException e) {
             throw new IllegalStateException("Problem when building URI: " + uriString, e);
         } catch (NullPointerException e) {
@@ -295,6 +296,13 @@ public class RestClientImpl implements RestClient {
         }
     }
 
+    protected URI createUri(String uriString, boolean escaped) throws URISyntaxException, UnsupportedEncodingException {
+        if (escaped) {
+            return new URI(URLDecoder.decode(uriString, StandardCharsets.UTF_8.toString()));
+        } else {
+            return new URI(uriString);
+        }
+    }
     /**
      * factory method that maps a string with a HTTP method name to an
      * implementation class in Apache HttpClient. Currently the name is mapped
