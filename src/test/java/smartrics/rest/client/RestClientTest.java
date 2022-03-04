@@ -52,7 +52,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 public class RestClientTest {
 
-    private static Logger LOG = LoggerFactory.getLogger(RestClientTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RestClientTest.class);
 
     @Mock
     private HttpRequestBase mockRequestBase;

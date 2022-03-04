@@ -23,11 +23,11 @@ public class RestMultipart {
      * @param stringValue The String content or the file Path
      */
     public RestMultipart(RestMultipartType type, String stringValue) {
-        this(type, stringValue, (String)null, (String)null);
+        this(type, stringValue, null, null);
     }
 
     public RestMultipart(RestMultipartType type,String stringValue, String contentType) {
-        this(type, stringValue, contentType, (String)null);
+        this(type, stringValue, contentType, null);
     }
 
     public RestMultipart(RestMultipartType type, String stringValue, String contentType, String charset) {

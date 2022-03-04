@@ -223,9 +223,6 @@ public class RestClientImpl implements RestClient {
                 }
             }
             ((HttpEntityEnclosingRequestBase) method).setEntity(requestEntity);
-        } else {
-            //TODO what about redirects
-            //method.setFollowRedirects(request.isFollowRedirect());
         }
 
     }
@@ -252,13 +249,12 @@ public class RestClientImpl implements RestClient {
                 String fileName;
                 fileName = restMultipart.getValue();
                 File file = new File(fileName);
-                FileBody fileBody = new FileBody(file); //TODO what about content type
+                FileBody fileBody = new FileBody(file, ContentType.create(restMultipart.getContentType()));
                 //FilePart filePart = new FilePart(fileParamName, file, restMultipart.getContentType(), restMultipart.getCharset());
                 LOG.info("Configure Multipart file upload paramName={} :  ContentType={} for  file={} ", new String[]{ fileParamName,  restMultipart.getContentType(), fileName});
                 return fileBody;
             case STRING:
-                StringBody stringPart = new StringBody(restMultipart.getValue(), ContentType.MULTIPART_FORM_DATA);
-                //stringPart.setContentType(restMultipart.getContentType()); TODO whata about content type
+                StringBody stringPart = new StringBody(restMultipart.getValue(), ContentType.create(restMultipart.getContentType()));
                 LOG.info("Configure Multipart String upload paramName={} :  ContentType={} ", fileParamName, stringPart.getContentType());
                 return stringPart;
             default:
@@ -274,12 +270,10 @@ public class RestClientImpl implements RestClient {
         if (!file.exists()) {
             throw new IllegalArgumentException("File not found: " + fileName);
         }
-        return new FileEntity(file); //TODO what about the content type
+        return new FileEntity(file);
     }
 
     private void setUri(HttpRequestBase m, String hostAddr, RestRequest request) {
-        //TODO what about gethostconfiguration
-        //String host = hostAddr == null ? client.getHostConfiguration().getHost() : hostAddr;
         if (hostAddr == null) {
             throw new IllegalStateException("hostAddress is null: please config httpClient host configuration or " + "pass a valid host address or config a baseUrl on this client");
         }
@@ -313,7 +307,6 @@ public class RestClientImpl implements RestClient {
      * @return the method class
      */
     protected String getMethodClassnameFromMethodName(String mName) {
-        //TODO fix this for new http client
         return String.format("org.apache.http.client.methods.Http%s", mName);
     }
 
