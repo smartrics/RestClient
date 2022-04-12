@@ -168,8 +168,10 @@ public class RestClientImpl implements RestClient {
             int nRead;
             byte[] bytes = new byte[4];
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            response.getEntity().writeTo(buffer);
-            resp.setRawBody(buffer.toByteArray());
+            if (response.getEntity() != null) {
+                response.getEntity().writeTo(buffer);
+                resp.setRawBody(buffer.toByteArray());
+            }
             // Debug
             if (LOG.isDebugEnabled()) {
                 LOG.debug("Http Request Path : {}", method.toString());
@@ -244,21 +246,21 @@ public class RestClientImpl implements RestClient {
 
     private ContentBody createMultipart(String fileParamName, RestMultipart restMultipart) {
         RestMultipart.RestMultipartType type = restMultipart.getType();
+        ContentType contentType = restMultipart.getContentType() != null ? ContentType.create(restMultipart.getContentType()) : ContentType.APPLICATION_OCTET_STREAM;
         switch (type) {
             case FILE:
                 String fileName;
                 fileName = restMultipart.getValue();
                 File file = new File(fileName);
-                FileBody fileBody = new FileBody(file, ContentType.create(restMultipart.getContentType()));
-                //FilePart filePart = new FilePart(fileParamName, file, restMultipart.getContentType(), restMultipart.getCharset());
+                FileBody fileBody = new FileBody(file, contentType);
                 LOG.info("Configure Multipart file upload paramName={} :  ContentType={} for  file={} ", new String[]{ fileParamName,  restMultipart.getContentType(), fileName});
                 return fileBody;
             case STRING:
-                StringBody stringPart = new StringBody(restMultipart.getValue(), ContentType.create(restMultipart.getContentType()));
+                StringBody stringPart = new StringBody(restMultipart.getValue(), contentType);
                 LOG.info("Configure Multipart String upload paramName={} :  ContentType={} ", fileParamName, stringPart.getContentType());
                 return stringPart;
             default:
-                throw new IllegalArgumentException("Unknonw Multipart Type : " + type);
+                throw new IllegalArgumentException("Unknown Multipart Type : " + type);
         }
 
     }
