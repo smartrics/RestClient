@@ -32,7 +32,7 @@ public class RestRequest extends RestData {
      * An http verb (those supported).
      */
     public enum Method {
-        Get, Post, Put, Delete, Head, Options, Trace
+        Get, Post, Put, Delete, Head, Options, Trace, Patch
     }
 
     private static final String FILE = "file";
@@ -41,7 +41,7 @@ public class RestRequest extends RestData {
     private String multipartFileName;
     @Deprecated
     private String multipartFileParameterName = FILE;
-    private Map<String,RestMultipart> multipartFileByParamName = new LinkedHashMap<String, RestMultipart>();
+    private final Map<String,RestMultipart> multipartFileByParamName = new LinkedHashMap<>();
     private String query;
     private Method method;
     private boolean followRedirect = true;

@@ -75,8 +75,8 @@ public abstract class RestData {
 		}
 	}
 
-	private final List<Header> headers = new ArrayList<Header>();
-	private byte raw[];
+	private final List<Header> headers = new ArrayList<>();
+	private byte[] raw;
 	private String resource;
 	private Long transactionId;
 
@@ -170,7 +170,7 @@ public abstract class RestData {
 	 * @return the sub-list of headers with the same name
 	 */
 	public List<Header> getHeader(String name) {
-		List<Header> headersWithTheSameName = new ArrayList<Header>();
+		List<Header> headersWithTheSameName = new ArrayList<>();
 		for (Header h : headers) {
 			if (h.getName().equalsIgnoreCase(name)) {
 				headersWithTheSameName.add(h);
